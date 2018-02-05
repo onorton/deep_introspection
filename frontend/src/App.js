@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import ImageCollection from './panels/ImageCollection'
+import styles from '../node_modules/@blueprintjs/core/dist/blueprint.css';
+
+import ImageCollection from './components/ImageCollection'
 class App extends Component {
   render() {
     return (
