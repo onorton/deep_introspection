@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { Scrollbars } from 'react-custom-scrollbars';
-import { Button } from '@blueprintjs/core';
 export default class ImageCollection extends Component {
 
   constructor(props) {
@@ -19,12 +18,12 @@ export default class ImageCollection extends Component {
     let collection = this;
     let selected = this.state.selected;
     let imageStyle = {maxHeight: '300px', maxWidth: '90%'}
-    let selectedStyle = { outlineColor: '#005ce6', outlineStyle: 'solid', maxHeight: '300px', maxWidth: '90%'}
+    let selectedStyle = { outlineColor: '#137CBD', outlineStyle: 'solid', maxHeight: '300px', maxWidth: '90%'}
 
     return (
-      <div style={{width: '300px', height: '100%', backgroundColor: '#CCCCCC'}}>
-         <button type="button" className="pt-button pt-icon-add">Add Images</button>
-         <Scrollbars style={{ height: 780 }}>
+      <div style={{width: '250px', height: '810px', backgroundColor: '#BFCCD6'}}>
+          <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59'}}><h2 style={{color:'#FFFFFF'}}>Test Images</h2><button type="button" className="pt-button pt-icon-add">Add Images</button></div>
+         <Scrollbars style={{ height: '700px' }}>
          <ul style={{listStyleType: 'none', padding: 0, margin: 0}}>
            {
              this.state.imageUrls.map(function(url, index){

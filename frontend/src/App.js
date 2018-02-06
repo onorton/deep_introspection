@@ -9,7 +9,7 @@ class App extends Component {
     return (
       <div className="App">
         <header className="App-header">
-          <h1 className="App-title">Deep Introspection</h1>
+          <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
         </header>
         <ImageCollection></ImageCollection>
 
