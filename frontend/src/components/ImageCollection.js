@@ -1,6 +1,12 @@
 import React, { Component } from 'react';
 import { Scrollbars } from 'react-custom-scrollbars';
 import Cookies from 'js-cookie';
+import { Position, Toaster, Intent } from "@blueprintjs/core";
+
+const OurToaster = Toaster.create({
+    className: "my-toaster",
+    position: Position.TOP,
+});
 
 export default class ImageCollection extends Component {
 
@@ -16,10 +22,29 @@ export default class ImageCollection extends Component {
     this.setState({selected:index})
   }
 
+  isImage(filename) {
+    var parts = filename.split('.');
+    const ext = parts[parts.length - 1];
+    switch (ext.toLowerCase()) {
+        case 'jpg':
+        case 'gif':
+        case 'bmp':
+        case 'png':
+            //etc
+            return true;
+    }
+    return false;
+  }
+
   saveImage(img) {
     const urls = this.state.imageUrls;
     const name = img.name;
     const collection = this;
+    // Check that file has image extension, alert user if not
+    if (!this.isImage(name)) {
+      OurToaster.show({ intent: Intent.DANGER, message: "This file is not an image!" });
+      return;
+    }
     // Send request to backend
     var reader = new FileReader();
     reader.readAsDataURL(img);
@@ -63,7 +88,7 @@ export default class ImageCollection extends Component {
         <h2 style={{color:'#FFFFFF', paddingBottom:'5px'}}>Test Images</h2>
         <label style={{width: '115px'}}className="pt-file-upload pt-button pt-icon-add ">
         Add Image
-          <input onChange={(event) => this.saveImage(event.target.files[0])} type="file"/>
+          <input  type="file" accept="image/*" onChange={(event) => this.saveImage(event.target.files[0])} type="file"/>
         </label>
         </div>
         <Scrollbars style={{ height: '700px' }}>
