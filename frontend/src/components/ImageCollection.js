@@ -8,15 +8,37 @@ const OurToaster = Toaster.create({
     position: Position.TOP,
 });
 
+
 export default class ImageCollection extends Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      imageUrls: ['http://naturaldogguide.com/wp-content/uploads/2016/10/Ring-Worm-in-Dogs.jpg','http://purrfectcatbreeds.com/wp-content/uploads/2014/06/Chartreux4.jpg','https://bransbyhorses.co.uk/app/uploads/2016/03/Sophie.jpg','https://upload.wikimedia.org/wikipedia/commons/7/71/2010-kodiak-bear-1.jpg'],
+      imageUrls: [],
       selected: 0
     };
   }
+
+  componentWillMount() {
+    const collection = this
+    fetch('http://127.0.0.1:8000/uploadImage/', {
+      method: 'GET',
+      headers: {
+          "Content-Type": "application/json"
+      }
+    }).then(function(response) {
+      if (response.status == 200) {
+        response.json().then(function(data) {
+          collection.setState({imageUrls: data.urls})
+        })
+      }
+
+    }).catch(function(error) {
+      console.log('There has been a problem with your fetch operation: ' + error.message);
+    });
+  }
+
+
 
   select(index) {
     this.setState({selected:index})

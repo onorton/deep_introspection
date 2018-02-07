@@ -32,4 +32,7 @@ def index(request):
         else:
             return HttpResponse("{}",status=409)
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"File successfully uploaded.\"}")
+    elif request.method == 'GET':
+        urls = list(map(lambda item: item.image.url, list(TestImage.objects.all())))
+        return HttpResponse("{\"urls\":"+ json.dumps(urls) + "}")
     return HttpResponse("{message: \"Invalid method.\"}", status=405)
