@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Overlay, Tooltip, Position} from "@blueprintjs/core";
+import { Overlay, Tooltip, Position, Intent} from "@blueprintjs/core";
+import {MainToaster} from '../MainToaster.js'
 
 export default class UploadModelOverlay extends Component {
 
@@ -43,7 +44,14 @@ export default class UploadModelOverlay extends Component {
   }
 
   upload() {
-    
+      if (this.state.architecture == null) {
+        MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No architecture file uploaded." });
+        return
+      }
+      if (this.state.model == null) {
+        MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No weights file uploaded." });
+        return
+      }
   }
 
   render(){
@@ -51,7 +59,7 @@ export default class UploadModelOverlay extends Component {
           <Overlay isOpen={this.state.isOpen} canEscapeKeyClose={true} onClose={() => this.setState({isOpen:false})}>
           <div className="pt-card pt-elevation-0" style={{width:500}}>
             <h3>Add Model</h3>
-              <p>If this is the first time using Deep Introspection you need to upload a caffe model to analyse.</p>
+              <p>Before using Deep Introspection, you need to upload a caffe model to analyse.</p>
               <label class="pt-label">
               <h5>Architecture File</h5>
               <p>This is the *.prototxt file that defines the architecture of the network.</p>

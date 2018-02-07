@@ -2,12 +2,7 @@ import React, { Component } from 'react';
 import { Scrollbars } from 'react-custom-scrollbars';
 import Cookies from 'js-cookie';
 import { Position, Toaster, Intent } from "@blueprintjs/core";
-
-const OurToaster = Toaster.create({
-    className: "my-toaster",
-    position: Position.TOP,
-});
-
+import {MainToaster} from '../MainToaster'
 
 export default class ImageCollection extends Component {
 
@@ -64,7 +59,7 @@ export default class ImageCollection extends Component {
     const collection = this;
     // Check that file has image extension, alert user if not
     if (!this.isImage(name)) {
-      OurToaster.show({ timeout:5000, intent: Intent.DANGER, message: "This file is not an image!" });
+      MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "This file is not an image!" });
       return;
     }
     // Send request to backend
@@ -87,7 +82,7 @@ export default class ImageCollection extends Component {
             collection.setState({imageUrls: urls})
           })
         } else if (response.status == 409) {
-          OurToaster.show({ timeout:5000, intent: Intent.WARNING, message: "You have already uploaded this image." });
+          MainToaster.show({ timeout:5000, intent: Intent.WARNING, message: "You have already uploaded this image." });
         }
 
       }).catch(function(error) {
