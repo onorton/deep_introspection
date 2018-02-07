@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import { Scrollbars } from 'react-custom-scrollbars';
+import Cookies from 'js-cookie';
+
 export default class ImageCollection extends Component {
 
   constructor(props) {
@@ -15,35 +17,36 @@ export default class ImageCollection extends Component {
   }
 
   saveImage(img) {
-    const imageUrls = this.state.imageUrls;
+    const urls = this.state.imageUrls;
     const name = img.name;
+    const collection = this;
     // Send request to backend
     var reader = new FileReader();
     reader.readAsDataURL(img);
     reader.onload = function () {
+      console.log( JSON.stringify({name: name, image: reader.result}))
       // If successfully read image, save on file system
-      const url = 'http://localhost:8000/images/'+name;
-      // Add save image url to imageUrls
-      imageUrls.push(url);
-      var req = new XMLHttpRequest(),
-        path = "http://localhost:8000/uploadImage/" + name,
-        data = JSON.stringify({image: reader.result});
-        req.onreadystatechange = function(err) {
-            if (req.readyState == 4 && req.status == 200){
-                console.log(req.responseText);
-            } else {
-                console.log(err);
-            }
-        };
-        // Set the content type of the request to json since that's what's being sent
-        req.open("POST", path, true);
-        req.setRequestHeader('Content-Type', 'application/json');
-        req.send(data);
+      const url = 'http://127.0.0.1:8000/media/images/'+name;
+      fetch('http://127.0.0.1:8000/uploadImage/', {
+        method: 'POST',
+        body: JSON.stringify({name: name, image: reader.result}),
+        headers: {
+            "Content-Type": "application/json"
+        }
+      }).then(function(response) {
+        urls.push(url);
+        collection.setState({imageUrls: urls})
+        return response.json();
+
+      }).catch(function(error) {
+        console.log('There has been a problem with your fetch operation: ' + error.message);
+      });
+
+
       };
     reader.onerror = function (error) {
      console.log('Error: ', error);
     };
-    this.setState({imageUrls: imageUrls})
 
   }
 
