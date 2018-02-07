@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { Overlay, Tooltip, Position, Intent} from "@blueprintjs/core";
 import {MainToaster} from '../MainToaster.js'
 
+const blobSize = 5242880
+
 export default class UploadModelOverlay extends Component {
 
   constructor(props) {
@@ -32,7 +34,6 @@ export default class UploadModelOverlay extends Component {
   addModel(file) {
     this.setState({validModel: this.isValidFile(file.name,'caffemodel')})
     if (this.state.validModel) {
-      console.log('sup')
       this.setState({model: file})
     }
   }
@@ -44,6 +45,7 @@ export default class UploadModelOverlay extends Component {
   }
 
   upload() {
+
       if (this.state.architecture == null) {
         MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No architecture file uploaded." });
         return
@@ -52,6 +54,34 @@ export default class UploadModelOverlay extends Component {
         MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No weights file uploaded." });
         return
       }
+      let overlay = this
+
+      // Send request to backend
+      let numBlobs = Math.floor(this.state.model.size/blobSize)+1
+      for (var i = 0; i < numBlobs; i++) {
+        (function(file, i) {
+        var reader = new FileReader();
+        reader.readAsDataURL(overlay.state.model.slice(i*blobSize,(i+1)*blobSize));
+        reader.onload = function () {
+        // If successfully read file, save on file system
+        fetch('http://127.0.0.1:8000/uploadModel/', {
+          method: 'POST',
+          body: JSON.stringify({name: overlay.state.model.name, part: reader.result, blobNum: i, blobMax: numBlobs-1}),
+          headers: {
+              "Content-Type": "application/json"
+          }
+        }).then(function(response) {
+          return response.json();
+        }).catch(function(error) {
+          console.log('There has been a problem with your fetch operation: ' + error.message);
+        });
+        };
+      reader.onerror = function (error) {
+       console.log('Error: ', error);
+      };
+    })(this.state.model.slice(i*blobSize,(i+1)*blobSize), i)
+      }
+
   }
 
   render(){

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'corsheaders',
     'uploadImage',
+    'uploadModel',
 ]
 WEBPACK_LOADER = {
 'DEFAULT': {
@@ -64,7 +65,7 @@ CORS_ORIGIN_WHITELIST = (
     'localhost:8000',
 )
 ROOT_URLCONF = 'deep_introspection.urls'
-
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1000000000
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
