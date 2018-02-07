@@ -4,6 +4,8 @@ import './App.css';
 import styles from '../node_modules/@blueprintjs/core/dist/blueprint.css';
 
 import ImageCollection from './components/ImageCollection'
+import UploadModelOverlay from './components/UploadModelOverlay'
+
 class App extends Component {
   render() {
     return (
@@ -11,6 +13,7 @@ class App extends Component {
         <header className="App-header">
           <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
         </header>
+        <UploadModelOverlay/>
         <ImageCollection></ImageCollection>
 
       </div>
