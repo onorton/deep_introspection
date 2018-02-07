@@ -108,6 +108,7 @@ export default class ImageCollection extends Component {
     let imageStyle = {maxHeight: '300px', maxWidth: '90%'}
     let selectedStyle = { outlineColor: '#137CBD', outlineStyle: 'solid', maxHeight: '300px', maxWidth: '90%'}
 
+
     return (
       <div style={{width: '250px', height: '810px', backgroundColor: '#BFCCD6'}}>
 
@@ -118,6 +119,17 @@ export default class ImageCollection extends Component {
           <input  type="file" accept="image/*" onChange={(event) => this.saveImage(event.target.files[0])} type="file"/>
         </label>
         </div>
+        {this.state.imageUrls.length == 0 ? (
+
+        <div class="pt-non-ideal-state" style={{height:150, paddingTop:20}}>
+        <div class="pt-non-ideal-state-visual pt-non-ideal-state-icon">
+        <span class="pt-icon pt-icon-media"></span>
+        </div>
+        <h4 class="pt-non-ideal-state-title">There are no test images</h4>
+        <div class="pt-non-ideal-state-description">
+          Add a new image to get started.
+          </div>
+        </div>) : <div></div>}
         <Scrollbars style={{ height: '700px' }}>
           <ul style={{listStyleType: 'none', padding: 0, margin: 0}}>
            {
