@@ -8,6 +8,7 @@ import urllib.parse
 def index(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
         up = urllib.parse.urlparse(body['image'])
         head, data = up.path.split(',', 1)
         bits = head.split(';')
@@ -21,7 +22,7 @@ def index(request):
 
         # Do something smart with charset and b64 instead of assuming
 
-        with open('images/'+body['name'], "wb") as f:
+        with open('images/'+name, "wb") as f:
             f.write(base64.b64decode(data))
-        return HttpResponse("{message: \"File successfully uploaded.\"}")
+        return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"File successfully uploaded.\"}")
     return HttpResponse("{message: \"Invalid method.\"}")

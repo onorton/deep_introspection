@@ -24,9 +24,8 @@ export default class ImageCollection extends Component {
     var reader = new FileReader();
     reader.readAsDataURL(img);
     reader.onload = function () {
-      console.log( JSON.stringify({name: name, image: reader.result}))
       // If successfully read image, save on file system
-      const url = 'http://127.0.0.1:8000/media/images/'+name;
+
       fetch('http://127.0.0.1:8000/uploadImage/', {
         method: 'POST',
         body: JSON.stringify({name: name, image: reader.result}),
@@ -34,9 +33,10 @@ export default class ImageCollection extends Component {
             "Content-Type": "application/json"
         }
       }).then(function(response) {
-        urls.push(url);
-        collection.setState({imageUrls: urls})
-        return response.json();
+        response.json().then(function(data) {
+          urls.push('http://127.0.0.1:8000/media/images/' + data.filename);
+          collection.setState({imageUrls: urls})
+        })
 
       }).catch(function(error) {
         console.log('There has been a problem with your fetch operation: ' + error.message);
