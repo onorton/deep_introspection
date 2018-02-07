@@ -3,6 +3,8 @@ from django.views.decorators.csrf import csrf_exempt
 import base64
 import json
 import urllib.parse
+import hashlib
+from uploadImage.models import TestImage
 
 @csrf_exempt
 def index(request):
@@ -20,9 +22,14 @@ def index(request):
             elif bit == 'base64':
                 b64 = True
 
-        # Do something smart with charset and b64 instead of assuming
-
-        with open('images/'+name, "wb") as f:
-            f.write(base64.b64decode(data))
+        # Hash the data to see if image already exists
+        imgHash = hashlib.md5(data.encode('utf-8')).digest()
+        if TestImage.objects.filter(hash=imgHash).count() == 0:
+            img = TestImage(hash=imgHash, image='images/'+name)
+            img.save()
+            with open('images/'+name, "wb") as f:
+                f.write(base64.b64decode(data))
+        else:
+            return HttpResponse("{}",status=409)
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"File successfully uploaded.\"}")
-    return HttpResponse("{message: \"Invalid method.\"}")
+    return HttpResponse("{message: \"Invalid method.\"}", status=405)

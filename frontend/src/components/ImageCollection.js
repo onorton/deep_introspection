@@ -42,7 +42,7 @@ export default class ImageCollection extends Component {
     const collection = this;
     // Check that file has image extension, alert user if not
     if (!this.isImage(name)) {
-      OurToaster.show({ intent: Intent.DANGER, message: "This file is not an image!" });
+      OurToaster.show({ timeout:5000, intent: Intent.DANGER, message: "This file is not an image!" });
       return;
     }
     // Send request to backend
@@ -58,10 +58,15 @@ export default class ImageCollection extends Component {
             "Content-Type": "application/json"
         }
       }).then(function(response) {
-        response.json().then(function(data) {
-          urls.push('http://127.0.0.1:8000/media/images/' + data.filename);
-          collection.setState({imageUrls: urls})
-        })
+
+        if (response.status == 200) {
+          response.json().then(function(data) {
+            urls.push('http://127.0.0.1:8000/media/images/' + data.filename);
+            collection.setState({imageUrls: urls})
+          })
+        } else if (response.status == 409) {
+          OurToaster.show({ timeout:5000, intent: Intent.WARNING, message: "You have already uploaded this image." });
+        }
 
       }).catch(function(error) {
         console.log('There has been a problem with your fetch operation: ' + error.message);
