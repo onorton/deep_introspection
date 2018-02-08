@@ -105,8 +105,8 @@ export default class ImageCollection extends Component {
 
 
     return (
-      <div style={{width: '250px', height: '810px', backgroundColor: '#BFCCD6'}}>
-
+      <div style={this.props.style}>
+        <div style={{backgroundColor: '#BFCCD6'}}>
         <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59'}}>
         <h2 style={{color:'#FFFFFF', paddingBottom:'5px'}}>Test Images</h2>
         <label style={{width: '115px'}}className="pt-file-upload pt-button pt-icon-add ">
@@ -125,7 +125,7 @@ export default class ImageCollection extends Component {
           Add a new image to get started.
           </div>
         </div>) : <div></div>}
-        <Scrollbars style={{ height: '700px' }}>
+        <Scrollbars style={this.props.style}>
           <ul style={{listStyleType: 'none', padding: 0, margin: 0}}>
            {
              this.state.imageUrls.map(function(url, index){
@@ -133,6 +133,7 @@ export default class ImageCollection extends Component {
                    })}
            </ul>
         </Scrollbars>
+      </div>
       </div>
     );
   }
