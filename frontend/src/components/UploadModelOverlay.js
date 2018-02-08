@@ -45,16 +45,40 @@ export default class UploadModelOverlay extends Component {
   }
 
   upload() {
+      let overlay = this
 
       if (this.state.architecture == null) {
-        MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No architecture file uploaded." });
+        MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No architecture file submitted." });
         return
       }
       if (this.state.model == null) {
-        MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No weights file uploaded." });
+        MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "No weights file submitted." });
         return
       }
-      let overlay = this
+
+      var architectureReader = new FileReader();
+      architectureReader.readAsDataURL(overlay.state.architecture);
+      architectureReader.onload = function () {
+      // If successfully read file, save on file system
+      fetch('http://127.0.0.1:8000/uploadModel/architecture/', {
+        method: 'POST',
+        body: JSON.stringify({name: overlay.state.architecture.name, file: architectureReader.result}),
+        headers: {
+            "Content-Type": "application/json"
+        }
+      }).then(function(response) {
+        if (response.status == 200) {
+          MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Architecture file submitted." });
+        }
+        return response.json();
+      }).catch(function(error) {
+        console.log('There has been a problem with your fetch operation: ' + error.message);
+      });
+      };
+    architectureReader.onerror = function (error) {
+     console.log('Error: ', error);
+    };
+
 
       // Send request to backend
       let numBlobs = Math.floor(this.state.model.size/blobSize)+1
@@ -81,6 +105,8 @@ export default class UploadModelOverlay extends Component {
               headers: {
                   "Content-Type": "application/json"
               }
+            }).then(function(response){
+              MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
             }).catch(function(error) {
               console.log('Problem assembling file: ' + error.message);
             });
@@ -88,13 +114,40 @@ export default class UploadModelOverlay extends Component {
           return response.json();
         }).catch(function(error) {
           console.log('There has been a problem with your fetch operation: ' + error.message);
-        });
-        };
+        })
+      }
+
       reader.onerror = function (error) {
        console.log('Error: ', error);
       };
-    })(this.state.model.slice(i*blobSize,(i+1)*blobSize), i)
+    })
+    (this.state.model.slice(i*blobSize,(i+1)*blobSize), i)
       }
+
+      if (this.state.labels != null) {
+        var labelsReader = new FileReader();
+        labelsReader.readAsDataURL(overlay.state.labels);
+        labelsReader.onload = function () {
+      // If successfully read file, save on file system
+      fetch('http://127.0.0.1:8000/uploadModel/labels/', {
+        method: 'POST',
+        body: JSON.stringify({name: overlay.state.labels.name, file: labelsReader.labels}),
+        headers: {
+            "Content-Type": "application/json"
+        }
+      }).then(function(response) {
+        if (response.status == 200) {
+          MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Class labels file submitted." });
+        }
+        return response.json();
+      }).catch(function(error) {
+        console.log('There has been a problem with your fetch operation: ' + error.message);
+      });
+      };
+    architectureReader.onerror = function (error) {
+     console.log('Error: ', error);
+    };
+  }
 
   }
 
