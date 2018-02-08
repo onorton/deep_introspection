@@ -146,7 +146,9 @@ export default class UploadModelOverlay extends Component {
         };
       }
         overlay.uploadWeights()
-        }
+      } else if (response.status == 409) {
+        MainToaster.show({ timeout:5000, intent: Intent.WARNING, message: "You have already uploaded this model." });
+      }
         return response.json();
       }).catch(function(error) {
         console.log('There has been a problem with your fetch operation: ' + error.message);
