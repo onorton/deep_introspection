@@ -11,6 +11,18 @@ def index(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
+        if body['blobNum'] == -1:
+            # Combine all parts of the file together
+            files = glob.glob('models/'+name+'.*')
+            with open('models/'+name, "ab") as mainFile:
+                for partName in files:
+                    with open(partName, "rb") as partFile:
+                        mainFile.write(partFile.read())
+            # Clean up parts
+            for partName in files:
+                os.remove(partName)
+            return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Model successfully uploaded.\"}")
+
         up = urllib.parse.urlparse(body['part'])
         head, data = up.path.split(',', 1)
         bits = head.split(';')
@@ -23,17 +35,5 @@ def index(request):
                 b64 = True
         with open('models/'+ name + '.' + str(body['blobNum']), "wb") as f:
             f.write(base64.b64decode(data))
-        if body['blobNum'] == body['blobMax']:
-            # Combine all parts of the file togethe
-            files = glob.glob('models/'+name+'.*')
-            with open('models/'+name, "ab") as mainFile:
-                for partName in files:
-                    with open(partName, "rb") as partFile:
-                        mainFile.write(partFile.read())
-            # Clean up parts
-            for partName in files:
-                os.remove(partName)
-            return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Model successfully uploaded.\"}")
-        else:
-            return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
+        return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)

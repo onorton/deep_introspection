@@ -58,6 +58,7 @@ export default class UploadModelOverlay extends Component {
 
       // Send request to backend
       let numBlobs = Math.floor(this.state.model.size/blobSize)+1
+      var count = numBlobs;
       for (var i = 0; i < numBlobs; i++) {
         (function(file, i) {
         var reader = new FileReader();
@@ -66,11 +67,24 @@ export default class UploadModelOverlay extends Component {
         // If successfully read file, save on file system
         fetch('http://127.0.0.1:8000/uploadModel/', {
           method: 'POST',
-          body: JSON.stringify({name: overlay.state.model.name, part: reader.result, blobNum: i, blobMax: numBlobs-1}),
+          body: JSON.stringify({name: overlay.state.model.name, part: reader.result, blobNum: i}),
           headers: {
               "Content-Type": "application/json"
           }
         }).then(function(response) {
+          count--;
+          // send message to server letting it know all the data has been sent.
+          if (count == 0) {
+            fetch('http://127.0.0.1:8000/uploadModel/', {
+              method: 'POST',
+              body: JSON.stringify({name: overlay.state.model.name, blobNum: -1}),
+              headers: {
+                  "Content-Type": "application/json"
+              }
+            }).catch(function(error) {
+              console.log('Problem assembling file: ' + error.message);
+            });
+          }
           return response.json();
         }).catch(function(error) {
           console.log('There has been a problem with your fetch operation: ' + error.message);
