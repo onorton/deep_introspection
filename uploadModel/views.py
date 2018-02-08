@@ -58,3 +58,25 @@ def architecture(request):
             f.write(base64.b64decode(data))
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"architecture successfully uploaded.\"}")
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
+
+@csrf_exempt
+def labels(request):
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        print(body.keys())
+        up = urllib.parse.urlparse(body['file'])
+        head, data = up.path.split(',', 1)
+        bits = head.split(';')
+        mime_type = bits[0] if bits[0] else 'text/plain'
+        charset, b64 = 'ASCII', False
+        for bit in bits:
+            if bit.startswith('charset='):
+                charset = bit[8:]
+            elif bit == 'base64':
+                b64 = True
+
+        with open('models/'+ name, "wb") as f:
+            f.write(base64.b64decode(data))
+        return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"architecture successfully uploaded.\"}")
+    return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)

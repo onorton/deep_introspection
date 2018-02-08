@@ -126,12 +126,12 @@ export default class UploadModelOverlay extends Component {
 
       if (this.state.labels != null) {
         var labelsReader = new FileReader();
-        labelsReader.readAsDataURL(overlay.state.labels);
+        labelsReader.readAsDataURL(this.state.labels);
         labelsReader.onload = function () {
       // If successfully read file, save on file system
       fetch('http://127.0.0.1:8000/uploadModel/labels/', {
         method: 'POST',
-        body: JSON.stringify({name: overlay.state.labels.name, file: labelsReader.labels}),
+        body: JSON.stringify({name: overlay.state.labels.name, file: labelsReader.result}),
         headers: {
             "Content-Type": "application/json"
         }
