@@ -44,6 +44,57 @@ export default class UploadModelOverlay extends Component {
     }
   }
 
+  uploadWeights() {
+    // Send request to backend
+    let overlay = this;
+    let modelName =  overlay.state.architecture.name.split('.')[0]
+    let numBlobs = Math.floor(this.state.model.size/blobSize)+1
+    var count = numBlobs;
+    for (var i = 0; i < numBlobs; i++) {
+      (function(file, i) {
+      var reader = new FileReader();
+      reader.readAsDataURL(overlay.state.model.slice(i*blobSize,(i+1)*blobSize));
+      reader.onload = function () {
+      // If successfully read file, save on file system
+      fetch('http://127.0.0.1:8000/uploadModel/', {
+        method: 'POST',
+        body: JSON.stringify({name: modelName, filename: overlay.state.model.name, part: reader.result, blobNum: i}),
+        headers: {
+            "Content-Type": "application/json"
+        }
+      }).then(function(response) {
+        count--;
+        // send message to server letting it know all the data has been sent.
+        if (count == 0) {
+          fetch('http://127.0.0.1:8000/uploadModel/', {
+            method: 'POST',
+            body: JSON.stringify({name: modelName,  filename: overlay.state.model.name, blobNum: -1}),
+            headers: {
+                "Content-Type": "application/json"
+            }
+          }).then(function(response){
+            if (response.status == 200) {
+              MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
+              overlay.setState({isOpen:false});
+            }
+          }).catch(function(error) {
+            console.log('Problem assembling file: ' + error.message);
+          });
+        }
+        return response.json();
+      }).catch(function(error) {
+        console.log('There has been a problem with your fetch operation: ' + error.message);
+      })
+    }
+
+    reader.onerror = function (error) {
+     console.log('Error: ', error);
+    };
+  })
+  (this.state.model.slice(i*blobSize,(i+1)*blobSize), i)
+    }
+  }
+
   upload() {
       let overlay = this
 
@@ -56,19 +107,45 @@ export default class UploadModelOverlay extends Component {
         return
       }
 
+      let modelName =  overlay.state.architecture.name.split('.')[0]
       var architectureReader = new FileReader();
       architectureReader.readAsDataURL(overlay.state.architecture);
       architectureReader.onload = function () {
       // If successfully read file, save on file system
       fetch('http://127.0.0.1:8000/uploadModel/architecture/', {
         method: 'POST',
-        body: JSON.stringify({name: overlay.state.architecture.name, file: architectureReader.result}),
+        body: JSON.stringify({name: modelName, filename: overlay.state.architecture.name, file: architectureReader.result}),
         headers: {
             "Content-Type": "application/json"
         }
       }).then(function(response) {
         if (response.status == 200) {
           MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Architecture file submitted." });
+          if (overlay.state.labels != null) {
+            var labelsReader = new FileReader();
+            labelsReader.readAsDataURL(overlay.state.labels);
+            labelsReader.onload = function () {
+          // If successfully read file, save on file system
+          fetch('http://127.0.0.1:8000/uploadModel/labels/', {
+            method: 'POST',
+            body: JSON.stringify({name: modelName, filename:  overlay.state.labels.name, file: labelsReader.result}),
+            headers: {
+                "Content-Type": "application/json"
+            }
+          }).then(function(response) {
+            if (response.status == 200) {
+              MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Class labels file submitted." });
+            }
+            return response.json();
+          }).catch(function(error) {
+            console.log('There has been a problem with your fetch operation: ' + error.message);
+          });
+          };
+        labelsReader.onerror = function (error) {
+         console.log('Error: ', error);
+        };
+      }
+        overlay.uploadWeights()
         }
         return response.json();
       }).catch(function(error) {
@@ -78,80 +155,6 @@ export default class UploadModelOverlay extends Component {
     architectureReader.onerror = function (error) {
      console.log('Error: ', error);
     };
-
-
-      // Send request to backend
-      let numBlobs = Math.floor(this.state.model.size/blobSize)+1
-      var count = numBlobs;
-      for (var i = 0; i < numBlobs; i++) {
-        (function(file, i) {
-        var reader = new FileReader();
-        reader.readAsDataURL(overlay.state.model.slice(i*blobSize,(i+1)*blobSize));
-        reader.onload = function () {
-        // If successfully read file, save on file system
-        fetch('http://127.0.0.1:8000/uploadModel/', {
-          method: 'POST',
-          body: JSON.stringify({name: overlay.state.model.name, part: reader.result, blobNum: i}),
-          headers: {
-              "Content-Type": "application/json"
-          }
-        }).then(function(response) {
-          count--;
-          // send message to server letting it know all the data has been sent.
-          if (count == 0) {
-            fetch('http://127.0.0.1:8000/uploadModel/', {
-              method: 'POST',
-              body: JSON.stringify({name: overlay.state.model.name, blobNum: -1}),
-              headers: {
-                  "Content-Type": "application/json"
-              }
-            }).then(function(response){
-              if (reponse.status = 200) {
-                MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
-                this.setState({isOpen:false});
-              }
-            }).catch(function(error) {
-              console.log('Problem assembling file: ' + error.message);
-            });
-          }
-          return response.json();
-        }).catch(function(error) {
-          console.log('There has been a problem with your fetch operation: ' + error.message);
-        })
-      }
-
-      reader.onerror = function (error) {
-       console.log('Error: ', error);
-      };
-    })
-    (this.state.model.slice(i*blobSize,(i+1)*blobSize), i)
-      }
-
-      if (this.state.labels != null) {
-        var labelsReader = new FileReader();
-        labelsReader.readAsDataURL(this.state.labels);
-        labelsReader.onload = function () {
-      // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/labels/', {
-        method: 'POST',
-        body: JSON.stringify({name: overlay.state.labels.name, file: labelsReader.result}),
-        headers: {
-            "Content-Type": "application/json"
-        }
-      }).then(function(response) {
-        if (response.status == 200) {
-          MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Class labels file submitted." });
-        }
-        return response.json();
-      }).catch(function(error) {
-        console.log('There has been a problem with your fetch operation: ' + error.message);
-      });
-      };
-    architectureReader.onerror = function (error) {
-     console.log('Error: ', error);
-    };
-  }
-
   }
 
   render(){
