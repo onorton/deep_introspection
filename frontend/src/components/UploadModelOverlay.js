@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Overlay, Tooltip, Position, Intent} from "@blueprintjs/core";
+import { Dialog, Tooltip, Position, Intent} from "@blueprintjs/core";
 import {MainToaster} from '../MainToaster.js'
 
 const blobSize = 5242880
@@ -161,9 +161,14 @@ export default class UploadModelOverlay extends Component {
 
   render(){
     return (
-          <Overlay isOpen={this.state.isOpen} canEscapeKeyClose={true} onClose={() => this.setState({isOpen:false})}>
-          <div className="pt-card pt-elevation-0" style={{width:500}}>
-            <h3>Add Model</h3>
+          <Dialog isOpen={this.state.isOpen} title="Add Model"
+            onClose={() => this.setState({isOpen:false})}
+            style={{backgroundColor:"#F5F8FA"}}
+            canEscapeClose={false}
+            canOutsideClickClose={false}
+            isCloseButtonShown={false}>
+
+              <div className="pt-dialog-body">
               <p>Before using Deep Introspection, you need to upload a caffe model to analyse.</p>
               <label class="pt-label">
               <h5>Architecture File</h5>
@@ -193,9 +198,13 @@ export default class UploadModelOverlay extends Component {
           <span class="pt-file-upload-input">{(this.state.labels != null) ? this.state.labels.name : 'Choose file...'}</span>
           </label>
         </label>
-        <button type="button" className="pt-button pt-icon-add" onClick={() => this.upload()}>Upload Model</button>
-              </div>
-          </Overlay>
+        </div>
+        <div className="pt-dialog-footer">
+                       <div className="pt-dialog-footer-actions">
+                       <button type="button" className="pt-button pt-icon-add" onClick={() => this.upload()}>Upload Model</button>
+                       </div>
+                   </div>
+          </Dialog>
     );
   }
 }
