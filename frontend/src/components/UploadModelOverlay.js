@@ -106,7 +106,10 @@ export default class UploadModelOverlay extends Component {
                   "Content-Type": "application/json"
               }
             }).then(function(response){
-              MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
+              if (reponse.status = 200) {
+                MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
+                this.setState({isOpen:false});
+              }
             }).catch(function(error) {
               console.log('Problem assembling file: ' + error.message);
             });
