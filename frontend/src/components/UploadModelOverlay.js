@@ -15,7 +15,8 @@ export default class UploadModelOverlay extends Component {
       validModel: true,
       model: null,
       validLabels: true,
-      labels: null
+      labels: null,
+      percentage: null
     };
   }
 
@@ -69,6 +70,7 @@ export default class UploadModelOverlay extends Component {
 
   uploadWeights() {
     // Send request to backend
+    this.setState({percentage: 5})
     let overlay = this;
     let modelName =  overlay.state.architecture.name.split('.')[0]
     let numBlobs = Math.floor(this.state.model.size/blobSize)+1
@@ -87,6 +89,7 @@ export default class UploadModelOverlay extends Component {
         }
       }).then(function(response) {
         count--;
+        overlay.setState({percentage: (100*(numBlobs-count)/numBlobs)})
         // send message to server letting it know all the data has been sent.
         if (count == 0) {
           fetch('http://127.0.0.1:8000/uploadModel/', {
@@ -222,9 +225,14 @@ export default class UploadModelOverlay extends Component {
           </label>
         </label>
         </div>
-        <div className="pt-dialog-footer">
+        <div className="pt-dialog-footer" >
+                    {(this.state.percentage != null) ?
+                      <div class="pt-progress-bar pt-intent-primary" style={{width: "65%"}}>
+                        <div class="pt-progress-meter" style={{width: this.state.percentage+"%"}}></div>
+                      </div> : <div/>
+                    }
                        <div className="pt-dialog-footer-actions">
-                       <button type="button" className="pt-button pt-icon-add" onClick={() => this.upload()}>Upload Model</button>
+                       <button type="button" className="pt-button pt-icon-add" onClick={() => this.upload()} style={{marginTop:-20}}>Upload Model</button>
                        </div>
                    </div>
           </Dialog>
