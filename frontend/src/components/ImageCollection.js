@@ -25,6 +25,8 @@ export default class ImageCollection extends Component {
       if (response.status == 200) {
         response.json().then(function(data) {
           collection.setState({imageUrls: data.urls})
+          collection.props.callbackParent(data.urls[0])
+
         })
       }
 
@@ -36,6 +38,8 @@ export default class ImageCollection extends Component {
 
 
   select(index) {
+    console.log('sup')
+    this.props.callbackParent(this.state.imageUrls[index])
     this.setState({selected:index})
   }
 
@@ -80,6 +84,10 @@ export default class ImageCollection extends Component {
           response.json().then(function(data) {
             urls.push('http://127.0.0.1:8000/media/images/' + data.filename);
             collection.setState({imageUrls: urls})
+            if(collection.state.imageUrls.length == 1) {
+              collection.select(0);
+            }
+
           })
         } else if (response.status == 409) {
           MainToaster.show({ timeout:5000, intent: Intent.WARNING, message: "You have already uploaded this image." });
@@ -129,7 +137,7 @@ export default class ImageCollection extends Component {
           <ul style={{listStyleType: 'none', padding: 0, margin: 0}}>
            {
              this.state.imageUrls.map(function(url, index){
-           return <li style={{padding: '5px 0px 5px 0px'}}><img src={url} onClick={() => collection.setState({selected: index})} style={(index == selected) ? selectedStyle : imageStyle} /></li>;
+           return <li style={{padding: '5px 0px 5px 0px'}}><img src={url} onClick={() => collection.select(index)} style={(index == selected) ? selectedStyle : imageStyle} /></li>;
                    })}
            </ul>
         </Scrollbars>
