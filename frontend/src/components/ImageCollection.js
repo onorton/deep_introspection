@@ -38,7 +38,6 @@ export default class ImageCollection extends Component {
 
 
   select(index) {
-    console.log('sup')
     this.props.callbackParent(this.state.imageUrls[index])
     this.setState({selected:index})
   }

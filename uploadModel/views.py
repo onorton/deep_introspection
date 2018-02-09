@@ -30,6 +30,13 @@ def index(request):
             return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Model successfully uploaded.\"}")
         saveFile('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
+    elif request.method == 'GET':
+        if TestModel.objects.first() != None:
+            return HttpResponse("{\"model\": \"" + TestModel.objects.first().name + "\", \"message\": \"Model successfully retrieved.\"}")
+        else:
+            return HttpResponse("{\"model\": null, \"message\": \"No model exists.\"}", status=404)
+
+
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
 
 @csrf_exempt

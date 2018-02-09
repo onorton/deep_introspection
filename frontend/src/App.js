@@ -11,9 +11,15 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      testImage: ''
+      testImage: null,
+      testModel: null
     };
   }
+
+  onTestModelChanged(model) {
+    this.setState({testModel:model})
+  }
+
   onTestImageChanged(img) {
     this.setState({testImage:img})
   }
@@ -23,6 +29,7 @@ class App extends Component {
         <header className="App-header">
           <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
         </header>
+        <UploadModelOverlay callbackParent={(model) => this.onTestModelChanged(model)}/>
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 110, width:"100%" }}>
           <ToolCollection testImage={this.state.testImage}/>
         </div>

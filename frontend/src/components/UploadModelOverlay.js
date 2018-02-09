@@ -9,7 +9,7 @@ export default class UploadModelOverlay extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isOpen: true,
+      isOpen: false,
       validArchitecture: true,
       architecture: null,
       validModel: true,
@@ -18,6 +18,29 @@ export default class UploadModelOverlay extends Component {
       labels: null
     };
   }
+
+  componentWillMount() {
+    const collection = this
+    // Fetch first available model
+    fetch('http://127.0.0.1:8000/uploadModel/', {
+      method: 'GET',
+      headers: {
+          "Content-Type": "application/json"
+      }
+    }).then(function(response) {
+      if (response.status == 200) {
+        response.json().then(function(data) {
+          collection.props.callbackParent(data.model)
+        })
+      } else if (response.status == 404) {
+        collection.setState({isOpen: true})
+      }
+
+    }).catch(function(error) {
+      console.log('There has been a problem with your fetch operation: ' + error.message);
+    });
+  }
+
   isValidFile(filename, type) {
     var parts = filename.split('.');
     const ext = parts[parts.length - 1];
