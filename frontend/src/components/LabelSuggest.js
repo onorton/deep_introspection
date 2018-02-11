@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Autosuggest from 'react-autosuggest';
+import './LabelSuggest.css'
 
 // Number of labels. Will be fetched by frontend
 const labels = [
@@ -11,6 +12,10 @@ const labels = [
     name: 'Cat',
     index: 1
   },
+  {
+    name: 'Car',
+    index: 2
+  }
 ];
 
 // Teach Autosuggest how to calculate suggestions for any given input value.
@@ -86,7 +91,7 @@ export default class LabelSuggest extends Component {
 
     // Finally, render it!
     return (
-      <Autosuggest className="pt-input pt-intent-primary"
+      <Autosuggest style={{listStyleType: 'none'}}
         suggestions={suggestions}
         onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
         onSuggestionsClearRequested={this.onSuggestionsClearRequested}
