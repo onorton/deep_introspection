@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {MainToaster} from '../MainToaster.js'
 import {Intent} from "@blueprintjs/core";
+import LabelSuggest from './LabelSuggest'
 
 export default class BoundaryTool extends Component {
 
@@ -20,6 +21,9 @@ export default class BoundaryTool extends Component {
   render(){
     return (
     <div className="toolArea" style={{float: "left"}}>
+    <LabelSuggest callbackParent={(label) => this.setState({firstClass:label})}/>
+    <LabelSuggest callbackParent={(label) => this.setState({secondClass:label})}/>
+
     <button type="button" className="pt-button pt-intent-primary" onClick={() => this.generate()}>Generate</button>
     </div>
     )
