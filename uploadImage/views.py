@@ -1,0 +1,38 @@
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import base64
+import json
+import urllib.parse
+import hashlib
+from uploadImage.models import TestImage
+
+@csrf_exempt
+def index(request):
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        up = urllib.parse.urlparse(body['image'])
+        head, data = up.path.split(',', 1)
+        bits = head.split(';')
+        mime_type = bits[0] if bits[0] else 'text/plain'
+        charset, b64 = 'ASCII', False
+        for bit in bits:
+            if bit.startswith('charset='):
+                charset = bit[8:]
+            elif bit == 'base64':
+                b64 = True
+
+        # Hash the data to see if image already exists
+        imgHash = hashlib.md5(data.encode('utf-8')).digest()
+        if TestImage.objects.filter(hash=imgHash).count() == 0:
+            img = TestImage(hash=imgHash, image='images/'+name)
+            img.save()
+            with open('images/'+name, "wb") as f:
+                f.write(base64.b64decode(data))
+        else:
+            return HttpResponse("{}",status=409)
+        return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"File successfully uploaded.\"}")
+    elif request.method == 'GET':
+        urls = list(map(lambda item: item.image.url, list(TestImage.objects.all())))
+        return HttpResponse("{\"urls\":"+ json.dumps(urls) + "}")
+    return HttpResponse("{message: \"Invalid method.\"}", status=405)
