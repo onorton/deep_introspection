@@ -46,5 +46,22 @@ def propagate_fully_connected(relevances, weights, activations, alpha):
                 sum_mults = np.matmul(keep_negatives(weights[:,k]),np.transpose(activations))
                 negative/= sum_mults
                 relevances_current[j] -= relevances[k]*beta*negative
-    print(relevances_current)
+    return relevances_current
+
+def propagate_pooling(relevances, activations):
+    """Calculates the layer-wise relevance propagations for a given pooling layer
+    inputs
+    relevances: relevances of higher layer
+    activations: activations for current layer
+    output
+    relevances of current layer
+    """
+    number_current_neurons = activations.shape[0]
+    number_higher_neurons = relevances.shape[0]
+    relevances_current = np.zeros(number_current_neurons)
+
+    sum_activations = np.sum(activations)
+    for j in range(number_current_neurons):
+        for k in range(number_higher_neurons):
+            relevances_current[j] += relevances[k]*activations[j]/sum_activations
     return relevances_current
