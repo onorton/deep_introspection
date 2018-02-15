@@ -33,22 +33,17 @@ def propagate_fully_connected(relevances, weights, activations, alpha):
 
     for j in range(number_current_neurons):
         for k in range(number_higher_neurons):
-            if weights[j][k] >= 0:
+            if weights[j,k] >= 0:
                 # calculate positive component
-                positive = weights[j][k]*activations[j]
-                sum_mults = 0
-                for i in range(number_current_neurons):
-                    if weights[i][k] >= 0:
-                        sum_mults += weights[i][k]*activations[i]
+                positive = weights[j,k]*activations[j]
+                keep_positives = np.vectorize(lambda x : x if x >= 0 else 0, otypes=[float])
+                sum_mults = np.matmul(keep_positives(weights[:,k]),np.transpose(activations))
                 positive /= sum_mults
                 relevances_current[j] += relevances[k]*alpha*positive
             else:
-                negative = weights[j][k]*activations[j]
-                sum_mults = 0
-                for i in range(number_current_neurons):
-                    if weights[i][k] < 0:
-                        sum_mults += weights[i][k]*activations[i]
-
+                negative = weights[j,k]*activations[j]
+                keep_negatives = np.vectorize(lambda x : x if x < 0 else 0, otypes=[float])
+                sum_mults = np.matmul(keep_negatives(weights[:,k]),np.transpose(activations))
                 negative/= sum_mults
                 relevances_current[j] -= relevances[k]*beta*negative
     print(relevances_current)

@@ -15,3 +15,10 @@ def test_relevances_propagated_fully_connected_layers():
     weights = np.array([[0.2, -1],[0.3, -0.7]])
     activations = np.array([0.1, 0.4])
     assert(np.isclose(lrp.propagate_fully_connected(relevances, weights, activations, 0.5), np.array([0.08834586,0.36165414])).all())
+
+def test_relevances_propagated_fully_connected_layers_different_sizes():
+    # Example from a 3 neuron fully connected layer to a 2 neuron fully connected layer
+    relevances = np.array([0.5, 0.4, 0.3])
+    weights = np.array([[0.2, -1, 0.4],[0.3, -0.7, -0.2]])
+    activations = np.array([0.1, 0.4])
+    assert(np.isclose(lrp.propagate_fully_connected(relevances, weights, activations, 0.5), np.array([0.238345865,0.51165414])).all())
