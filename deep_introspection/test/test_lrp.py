@@ -1,4 +1,5 @@
 from deep_introspection import lrp
+from deep_introspection import utils
 import numpy as np
 import caffe
 
@@ -24,7 +25,16 @@ def test_relevances_propagated_fully_connected_layers_different_sizes():
     assert(np.isclose(lrp.propagate_fully_connected(relevances, weights, activations, 0.5), np.array([0.238345865,0.51165414])).all())
 
 def test_relevances_propagated_pooling_layer():
-
     relevances = np.array([0.5, 0.4])
     activations = np.array([0.2,0.3,0.4,0.5])
     assert(np.isclose(lrp.propagate_pooling(relevances, activations), np.array([0.128571429,0.192857143,0.257142857,0.321428571])).all())
+
+def test_lrp_image():
+    caffe.set_device(0)  # if we have multiple GPUs, pick the first one
+    caffe.set_mode_gpu()
+    net = caffe.Classifier('deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel', caffe.TEST,channel_swap=(2,1,0))
+
+    img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
+    net.image_dims = newSize
+    lrp.calculate_lrp_heatmap(net, img)
+    assert(False)
