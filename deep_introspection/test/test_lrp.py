@@ -36,5 +36,5 @@ def test_lrp_image():
 
     img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
     net.image_dims = newSize
-    lrp.calculate_lrp_heatmap(net, img)
+    lrp.calculate_lrp_heatmap(net, img,'deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel')
     assert(False)
