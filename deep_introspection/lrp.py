@@ -1,6 +1,8 @@
 import numpy as np
 import copy
 import caffe
+import time
+
 def get_layer_names(net) :
     """Gets the layer names of relevant networks in order
     net: caffe network
@@ -54,36 +56,34 @@ def propagate_conv(posNet, negNet, relevances, activations, weightsLayer,activat
 
     beta = alpha - 1
 
-    keep_positives = np.vectorize(lambda x : x if x >= 0 else 0, otypes=[float])
-    keep_negatives = np.vectorize(lambda x : x if x < 0 else 0, otypes=[float])
+    positiveWeights = np.maximum(posNet.params[weightsLayer][0].data[...], 0)
+    negativeWeights = np.minimum(negNet.params[weightsLayer][0].data[...], 0)
 
-    W = posNet.params[weightsLayer][0].data[...]
-
-    posNet.params[weightsLayer][0].data[...] = keep_positives(W)
+    posNet.params[weightsLayer][0].data[...] = positiveWeights
     posNet.params[weightsLayer][1].data[...] = 0
-    negNet.params[weightsLayer][0].data[...] = keep_negatives(W)
+    negNet.params[weightsLayer][0].data[...] = negativeWeights
     negNet.params[weightsLayer][1].data[...] = 0
-
 
     posNet.blobs[activationLayer] = activations
     posNet.forward(start = activationLayer,end=weightsLayer)
-    z = posNet.blobs[activationLayer]+1e-9
+    z = posNet.blobs[weightsLayer].data
     s = relevances/z
-    posNet.blobs[activationLayer] = s
-    posNet.backward(start = weightsLayer,end=activationLayer)
-    positive = posNet.blobs[activationLayer]
+    posNet.blobs[weightsLayer] = s
+    posNet.backward(start = weightsLayer, end = activationLayer)
+    positive = posNet.blobs[activationLayer].data
 
-    negNet.blobs[activationLayer] = activations
-    negNet.forward(start = activationLayer,end=weightsLayer)
-    z = negNet.blobs[activationLayer]+1e-9
-    s = relevances/z
-    negNet.blobs[activationLayer] = s
-    negNet.backward(start = weightsLayer,end=activationLayer)
-    negative = negNet.blobs[activationLayer]
+    # negNet.blobs[activationLayer] = activations
+    # negNet.forward(start = activationLayer,end=weightsLayer)
+    # z = negNet.blobs[weightsLayer].data
+    # s = relevances/z
+    # negNet.blobs[weightsLayer] = s
+    # negNet.backward(start = weightsLayer, end=activationLayer)
+    # negative = negNet.blobs[activationLayer].data
 
-    return activations*(alpha*positive - beta*negative)
+    return activations*alpha*positive
+    #(alpha*positive - beta*negative)
 
-def propagate_pooling(relevances, activations, k, s):
+def propagate_pooling(net, relevances, activations, layer, k):
     """Calculates the layer-wise relevance propagations for a given pooling layer
     inputs
     relevances: relevances of higher layer
@@ -91,27 +91,24 @@ def propagate_pooling(relevances, activations, k, s):
     output
     relevances of current layer
     """
-    shape = relevances.shape
-    relevances = relevances.flatten()
-    activations = activations.flatten()
 
-    number_current_neurons = activations.shape[0]
-    number_higher_neurons = relevances.shape[0]
-    relevances_current = np.zeros(number_current_neurons)
+    net.blobs[layer] = activations
+    net.forward(start = layer, end = layer)
+    z = net.blobs[layer]
+    s = relevances/z
 
-    sum_activations = np.sum(activations)
-    activations_stack = np.zeros(shape=(activations.shape[0],relevances.shape[0]))
-    for i in range(relevances.shape[0]):
-        activations_stack[:,i] = activations
-    relevances_current = np.matmul(activations_stack, relevances)
+    net.blobs[layer] = s
+    net.backward(start = layer, end = layer)
+    c = net.blobs[layer]
+    assert(not np.isclose(z, c).all())
 
-    relevances_current /= sum_activations
-
-    relevances_unpooled = np.zeros(shape=(relevances_current.shape[0],k*k))
+    relevances = z*c
+    # Resize relevances when unpooling (Each neuron of k*k field has equal relevance)
+    relevances_unpooled = np.zeros(shape=(relevances.flatten().shape[0],k*k))
     for i in range(k*k):
-        relevances_unpooled[:,i] = relevances_current
-
-    return relevances_unpooled.flatten().reshape((shape[0],shape[1]*k,shape[2]*k))
+        relevances_unpooled[:,i] = relevances.flatten()
+    relevances = relevances_unpooled.flatten().reshape((relevances.shape[0],relevances.shape[1]*k,relevances.shape[2]*k))
+    return relevances
 
 def calculate_lrp_heatmap(net, img, architecture, weights):
     """Calculates the layer-wise relevance propagations for a given network and image
@@ -130,13 +127,31 @@ def calculate_lrp_heatmap(net, img, architecture, weights):
     relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc8'][0].data), net.blobs['fc7'].data[0], 2) # relevances of fc7
     relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc7'][0].data), net.blobs['fc6'].data[0], 2) # relevances of fc6
     relevances = propagate_fully_to_conv(relevances, np.transpose(net.params['fc6'][0].data), net.blobs['pool5'].data[0], 2) # relevances of pool5
-    relevances = propagate_pooling(relevances, net.blobs['pool5'].data[0], 2, 2) # relevances of conv5_3
+    relevances = propagate_pooling(net, relevances, net.blobs['pool5'].data[0], 'pool5', 2) # relevances of conv5_3
 
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', 'conv5_2', 2)
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', 'conv5_2', 2) # relevances of conv5_2
     relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', 'conv5_1', 2)
     relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool4'].data[0], 'conv5_1', 'pool4', 2)
+    relevances = propagate_pooling(net, relevances, net.blobs['pool4'].data[0], 'pool4', 2) # relevances of conv4_3
 
-    print(relevances.shape)
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', 'conv4_2', 2)
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', 'conv4_1', 2)
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool3'].data[0], 'conv4_1', 'pool3', 2)
+    relevances = propagate_pooling(net, relevances, net.blobs['pool3'].data[0], 'pool3', 2) # relevances of conv3_3
+
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', 'conv3_2', 2)
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', 'conv3_1', 2)
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool2'].data[0], 'conv3_1', 'pool2', 2)
+    relevances = propagate_pooling(net, relevances, net.blobs['pool2'].data[0], 'pool2', 2) # relevances of conv2_2
+
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', 'conv2_1', 2)
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool1'].data[0], 'conv2_1', 'pool1', 2)
+    relevances = propagate_pooling(net, relevances, net.blobs['pool1'].data[0], 'pool1', 2) # relevances of conv1_2
+
+    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', 'conv1_1', 2)
+	# Finally do input layer
+
+    print("Final relevances: " + str(relevances.shape))
 
 def generateNetCopy(architecture, weights):
     return caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
