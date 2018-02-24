@@ -40,7 +40,8 @@ def test_lrp_image():
     img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
     net.image_dims = newSize
     relevances = lrp.calculate_lrp_heatmap(net, img,'deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel')
-    #plt.imshow(img)
+
     plt.imshow(relevances, 'jet', alpha=0.5)
     plt.colorbar()
     plt.show()
+    assert(False)

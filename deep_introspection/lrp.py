@@ -54,64 +54,49 @@ def propagate_fully_to_conv(relevances, weights, activations, alpha):
 
 
 def propagate_conv(posNet, negNet, relevances, activations, weightsLayer,activationLayer, alpha):
-
     beta = alpha - 1
 
-    positiveWeights = np.maximum(posNet.params[weightsLayer][0].data[...], 0)
-    negativeWeights = np.minimum(negNet.params[weightsLayer][0].data[...], 0)
+    positiveWeights = np.maximum(posNet.params[weightsLayer][0].data[...], 1e-9)
+    negativeWeights = np.minimum(negNet.params[weightsLayer][0].data[...], -1e-9)
 
-    posNet.params[weightsLayer][0].data[...] = positiveWeights
-    posNet.params[weightsLayer][1].data[...] = 0
-    negNet.params[weightsLayer][0].data[...] = negativeWeights
-    negNet.params[weightsLayer][1].data[...] = 0
+    z = forward(activations, positiveWeights, posNet.blobs[weightsLayer].data[0].shape)
+    s = alpha*relevances/z
+    positive = backprop(s, positiveWeights, activations)
 
-    posNet.blobs[activationLayer] = activations
-    posNet.forward(start = activationLayer,end=weightsLayer)
-    z = posNet.blobs[weightsLayer].data
-    s = relevances/z
-    posNet.blobs[weightsLayer] = s
-    posNet.backward(start = weightsLayer, end = activationLayer)
-    positive = posNet.blobs[activationLayer].data
+    z = forward(activations, negativeWeights, posNet.blobs[weightsLayer].data[0].shape)
+    s = beta*relevances/z
+    negative = backprop(s, negativeWeights, activations)
 
-    # negNet.blobs[activationLayer] = activations
-    # negNet.forward(start = activationLayer,end=weightsLayer)
-    # z = negNet.blobs[weightsLayer].data
-    # s = relevances/z
-    # negNet.blobs[weightsLayer] = s
-    # negNet.backward(start = weightsLayer, end=activationLayer)
-    # negative = negNet.blobs[activationLayer].data
-
-    return activations*alpha*positive
-    #(alpha*positive - beta*negative)
+    return activations*(positive - negative)
 
 def propagate_first_conv(net, posNet, negNet, relevances, activations, weightsLayer, activationLayer, h, l):
     positiveWeights = np.maximum(posNet.params[weightsLayer][0].data[...], 0)
     negativeWeights = np.minimum(negNet.params[weightsLayer][0].data[...], 0)
     weights = net.params[weightsLayer][0].data[...]
 
-    net.params[weightsLayer][1].data[...] = 0
-    posNet.params[weightsLayer][0].data[...] = positiveWeights
-    posNet.params[weightsLayer][1].data[...] = 0
-    negNet.params[weightsLayer][0].data[...] = negativeWeights
-    negNet.params[weightsLayer][1].data[...] = 0
-
     X,L,H = activations,0*activations+l,0*activations+h
 
-    net.blobs[activationLayer] = X
-    net.forward(end=weightsLayer)
-    posNet.blobs[activationLayer] = L
-    posNet.forward(end=weightsLayer)
-    negNet.blobs[activationLayer] = H
-    negNet.forward(end=weightsLayer)
-
-    z = net.blobs[weightsLayer].data[0] + posNet.blobs[weightsLayer].data[0]+ negNet.blobs[weightsLayer].data[0]+1e-9
+    z = forward(X, weights, net.blobs[weightsLayer].data[0].shape) - forward(L, positiveWeights, net.blobs[weightsLayer].data[0].shape) - forward(H, negativeWeights, net.blobs[weightsLayer].data[0].shape)+1e-9
     s = relevances/z
 
-    return backprop(s, weights, X) - backprop(s, positiveWeights, L) - backprop(s, negativeWeights, H)
+    return X*backprop(s, weights, X) - L*backprop(s, positiveWeights, L) - H*backprop(s, negativeWeights, H)
+
+def forward(x, w, shape):
+    if len(x.shape) == 3:
+        x = x.reshape((1,)+x.shape)
+    x_col = im2col.im2col_indices(x, 3, 3)
+    w_col = w.reshape(w.shape[0],w.shape[1]*w.shape[2]*w.shape[3])
+
+    out = np.matmul(w_col,x_col)
+    out = out.reshape((shape[0], shape[1], shape[2], 1))
+    out = out.transpose(3, 0, 1, 2)
+    return out
 
 def backprop(s, weights, x):
-    s_reshaped = np.zeros(shape=(1, s.shape[0],s.shape[1],s.shape[2]))
-    s_reshaped[0] = s
+    s_reshaped = s
+    if len(s.shape) == 3:
+        s_reshaped = np.zeros(shape=(1, s.shape[0],s.shape[1],s.shape[2]))
+        s_reshaped[0] = s
     s_reshaped = np.transpose(s_reshaped, (1,2,3,0))
     s_reshaped = s_reshaped.reshape((s_reshaped.shape[0],s_reshaped.shape[1]*s_reshaped.shape[2]*s_reshaped.shape[3]))
 
@@ -124,7 +109,7 @@ def backprop(s, weights, x):
     W_reshape = weights.reshape((weights.shape[0],weights.shape[1]*weights.shape[2]*weights.shape[3]))
     dX_col = np.matmul(np.transpose(W_reshape), s_reshaped)
     dX = im2col.col2im_indices(dX_col, x.shape, 3, 3)
-    return dX[0]*x[0]
+    return dX[0]
 
 def propagate_pooling(net, relevances, activations, layer, k):
     """Calculates the layer-wise relevance propagations for a given pooling layer
@@ -137,7 +122,7 @@ def propagate_pooling(net, relevances, activations, layer, k):
 
     net.blobs[layer] = activations
     net.forward(start = layer, end = layer)
-    z = net.blobs[layer]
+    z = net.blobs[layer]+1e-9
     s = relevances/z
 
     net.blobs[layer] = s
@@ -148,7 +133,7 @@ def propagate_pooling(net, relevances, activations, layer, k):
     # Resize relevances when unpooling (Each neuron of k*k field has equal relevance)
     relevances_unpooled = np.zeros(shape=(relevances.flatten().shape[0],k*k))
     for i in range(k*k):
-        relevances_unpooled[:,i] = relevances.flatten()
+        relevances_unpooled[:,i] = relevances.flatten()/(k*k)
     relevances = relevances_unpooled.flatten().reshape((relevances.shape[0],relevances.shape[1]*k,relevances.shape[2]*k))
     return relevances
 
@@ -163,8 +148,8 @@ def calculate_lrp_heatmap(net, img, architecture, weights):
     layer_names = get_layer_names(net)
     net.predict([img])
     prediction = np.argmax(net.blobs['prob'].data[0])
-    relevances = np.zeros(net.blobs['prob'].data.shape[1])
-    relevances[10] = 1.0
+    relevances = np.zeros(net.blobs['prob'].data[0].shape)
+    relevances[prediction] = 1.0
     l = np.amin(img)
     h = np.amax(img)
 
@@ -194,11 +179,9 @@ def calculate_lrp_heatmap(net, img, architecture, weights):
 
     relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', 'conv1_1', 1)
 	# Finally do input layer
-    print(relevances)
     relevances = propagate_first_conv(net, generateNetCopy(architecture, weights), generateNetCopy(architecture,weights), relevances, net.blobs['data'].data[0], 'conv1_1', 'data', h, l)
 
     relevances =  np.mean(relevances.transpose(1,2,0), 2)
-    print("Final relevances: " + str(relevances.shape))
     return relevances
 
 def generateNetCopy(architecture, weights):
