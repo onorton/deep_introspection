@@ -53,25 +53,25 @@ def propagate_fully_to_conv(relevances, weights, activations, alpha):
     return relevances.reshape(out_shape)
 
 
-def propagate_conv(posNet, negNet, relevances, activations, weightsLayer,activationLayer, alpha):
+def propagate_conv(net, relevances, activations, weightsLayer,activationLayer, alpha):
     beta = alpha - 1
 
-    positiveWeights = np.maximum(posNet.params[weightsLayer][0].data[...], 1e-9)
-    negativeWeights = np.minimum(negNet.params[weightsLayer][0].data[...], -1e-9)
+    positiveWeights = np.maximum(net.params[weightsLayer][0].data[...], 1e-9)
+    negativeWeights = np.minimum(net.params[weightsLayer][0].data[...], -1e-9)
 
-    z = forward(activations, positiveWeights, posNet.blobs[weightsLayer].data[0].shape)
+    z = forward(activations, positiveWeights, net.blobs[weightsLayer].data[0].shape)
     s = alpha*relevances/z
     positive = backprop(s, positiveWeights, activations)
 
-    z = forward(activations, negativeWeights, posNet.blobs[weightsLayer].data[0].shape)
+    z = forward(activations, negativeWeights, net.blobs[weightsLayer].data[0].shape)
     s = beta*relevances/z
     negative = backprop(s, negativeWeights, activations)
 
     return activations*(positive - negative)
 
-def propagate_first_conv(net, posNet, negNet, relevances, activations, weightsLayer, activationLayer, h, l):
-    positiveWeights = np.maximum(posNet.params[weightsLayer][0].data[...], 0)
-    negativeWeights = np.minimum(negNet.params[weightsLayer][0].data[...], 0)
+def propagate_first_conv(net, relevances, activations, weightsLayer, activationLayer, h, l):
+    positiveWeights = np.maximum(net.params[weightsLayer][0].data[...], 0)
+    negativeWeights = np.minimum(net.params[weightsLayer][0].data[...], 0)
     weights = net.params[weightsLayer][0].data[...]
 
     X,L,H = activations,0*activations+l,0*activations+h
@@ -122,6 +122,9 @@ def propagate_pooling(net, relevances, activations, layer, k):
 
     net.blobs[layer] = activations
     net.forward(start = layer, end = layer)
+    print(layer)
+    print(net.blobs[layer])
+    print(activations)
     z = net.blobs[layer]+1e-9
     s = relevances/z
 
@@ -129,7 +132,7 @@ def propagate_pooling(net, relevances, activations, layer, k):
     net.backward(start = layer, end = layer)
     c = net.blobs[layer]
 
-    relevances = z*c
+    relevances = activations*c
     # Resize relevances when unpooling (Each neuron of k*k field has equal relevance)
     relevances_unpooled = np.zeros(shape=(relevances.flatten().shape[0],k*k))
     for i in range(k*k):
@@ -158,30 +161,31 @@ def calculate_lrp_heatmap(net, img, architecture, weights):
     relevances = propagate_fully_to_conv(relevances, np.transpose(net.params['fc6'][0].data), net.blobs['pool5'].data[0], 1) # relevances of pool5
     relevances = propagate_pooling(net, relevances, net.blobs['pool5'].data[0], 'pool5', 2) # relevances of conv5_3
 
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', 'conv5_2', 1) # relevances of conv5_2
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', 'conv5_1', 1)
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool4'].data[0], 'conv5_1', 'pool4', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', 'conv5_2', 1) # relevances of conv5_2
+    relevances = propagate_conv(net, relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', 'conv5_1', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool4'].data[0], 'conv5_1', 'pool4', 1)
     relevances = propagate_pooling(net, relevances, net.blobs['pool4'].data[0], 'pool4', 2) # relevances of conv4_3
 
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', 'conv4_2', 1)
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', 'conv4_1', 1)
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool3'].data[0], 'conv4_1', 'pool3', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', 'conv4_2', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', 'conv4_1', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool3'].data[0], 'conv4_1', 'pool3', 1)
     relevances = propagate_pooling(net, relevances, net.blobs['pool3'].data[0], 'pool3', 2) # relevances of conv3_3
 
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', 'conv3_2', 1)
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', 'conv3_1', 1)
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool2'].data[0], 'conv3_1', 'pool2', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', 'conv3_2', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', 'conv3_1', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool2'].data[0], 'conv3_1', 'pool2', 1)
     relevances = propagate_pooling(net, relevances, net.blobs['pool2'].data[0], 'pool2', 2) # relevances of conv2_2
 
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', 'conv2_1', 1)
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['pool1'].data[0], 'conv2_1', 'pool1', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', 'conv2_1', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool1'].data[0], 'conv2_1', 'pool1', 1)
     relevances = propagate_pooling(net, relevances, net.blobs['pool1'].data[0], 'pool1', 2) # relevances of conv1_2
 
-    relevances = propagate_conv(generateNetCopy(architecture,weights), generateNetCopy(architecture, weights), relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', 'conv1_1', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', 'conv1_1', 1)
 	# Finally do input layer
-    relevances = propagate_first_conv(net, generateNetCopy(architecture, weights), generateNetCopy(architecture,weights), relevances, net.blobs['data'].data[0], 'conv1_1', 'data', h, l)
+    relevances = propagate_first_conv(net, relevances, net.blobs['data'].data[0], 'conv1_1', 'data', h, l)
 
     relevances =  np.mean(relevances.transpose(1,2,0), 2)
+
     return relevances
 
 def generateNetCopy(architecture, weights):
