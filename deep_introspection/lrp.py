@@ -32,19 +32,18 @@ def propagate_fully_connected(relevances, weights, activations, alpha):
     """
     beta = alpha - 1
 
-    keep_positives = np.vectorize(lambda x : x if x >= 0 else 0, otypes=[float])
-    keep_negatives = np.vectorize(lambda x : x if x < 0 else 0, otypes=[float])
+    positiveWeights = np.maximum(weights, 0)
+    negativeWeights = np.minimum(weights, 0)
 
-    z_positive = np.matmul(keep_positives(np.transpose(weights)),activations)
-    s_positive = relevances/(z_positive+0.00000000001)
+    z = np.matmul(np.transpose(positiveWeights),activations)
+    s = relevances/(z+1e-9)
+    positive = np.matmul(positiveWeights,s)
 
-    c_positive = np.matmul(keep_positives(weights),s_positive)
+    z = np.matmul(np.transpose(negativeWeights),activations)
+    s = relevances/(z-1e-9)
+    negative = np.matmul(negativeWeights,s)
 
-    z_negative = np.matmul(keep_negatives(np.transpose(weights)),activations)
-    s_negative = relevances/(z_negative+0.00000000001)
-    c_negative = np.matmul(keep_negatives(weights),s_negative)
-
-    relevances_current = activations*(alpha*c_positive - beta*c_negative)
+    relevances_current = activations*(alpha*positive - beta*negative)
     return relevances_current
 
 def propagate_fully_to_conv(relevances, weights, activations, alpha):
@@ -53,23 +52,23 @@ def propagate_fully_to_conv(relevances, weights, activations, alpha):
     return relevances.reshape(out_shape)
 
 
-def propagate_conv(net, relevances, activations, weightsLayer,activationLayer, alpha):
+def propagate_conv(net, relevances, activations, weightsLayer, alpha):
     beta = alpha - 1
 
     positiveWeights = np.maximum(net.params[weightsLayer][0].data[...], 1e-9)
     negativeWeights = np.minimum(net.params[weightsLayer][0].data[...], -1e-9)
 
     z = forward(activations, positiveWeights, net.blobs[weightsLayer].data[0].shape)
-    s = alpha*relevances/z
+    s = relevances/z
     positive = backprop(s, positiveWeights, activations)
 
     z = forward(activations, negativeWeights, net.blobs[weightsLayer].data[0].shape)
-    s = beta*relevances/z
+    s = relevances/z
     negative = backprop(s, negativeWeights, activations)
 
-    return activations*(positive - negative)
+    return activations*(alpha*positive - beta*negative)
 
-def propagate_first_conv(net, relevances, activations, weightsLayer, activationLayer, h, l):
+def propagate_first_conv(net, relevances, activations, weightsLayer, h, l):
     positiveWeights = np.maximum(net.params[weightsLayer][0].data[...], 0)
     negativeWeights = np.minimum(net.params[weightsLayer][0].data[...], 0)
     weights = net.params[weightsLayer][0].data[...]
@@ -168,45 +167,42 @@ def calculate_lrp_heatmap(net, img, architecture, weights):
     """
     layer_names = get_layer_names(net)
     net.predict([img])
-    prediction = np.argmax(net.blobs['prob'].data[0])
+    prediction = np.argmax(np.mean(net.blobs['prob'].data, axis=0))
     relevances = np.zeros(net.blobs['prob'].data[0].shape)
-    relevances[prediction] = 100.0
+    relevances[prediction] = 1
     l = np.amin(img)
     h = np.amax(img)
     alpha = 2
     print("Using alpha " + str(alpha) + " and beta " + str(alpha-1))
+    print(prediction)
 
     relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc8'][0].data), net.blobs['fc7'].data[0], alpha) # relevances of fc7
     relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc7'][0].data), net.blobs['fc6'].data[0], alpha) # relevances of fc6
     relevances = propagate_fully_to_conv(relevances, np.transpose(net.params['fc6'][0].data), net.blobs['pool5'].data[0], alpha) # relevances of pool5
     relevances = propagate_pooling(net, relevances, net.blobs['conv5_3'].data[0], 'pool5', 2) # relevances of conv5_3
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', 'conv5_2', alpha) # relevances of conv5_2
-    relevances = propagate_conv(net, relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', 'conv5_1', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool4'].data[0], 'conv5_1', 'pool4', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', alpha) # relevances of conv5_2
+    relevances = propagate_conv(net, relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool4'].data[0], 'conv5_1', alpha)
     relevances = propagate_pooling(net, relevances, net.blobs['conv4_3'].data[0], 'pool4', 2) # relevances of conv4_3
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', 'conv4_2', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', 'conv4_1', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool3'].data[0], 'conv4_1', 'pool3', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool3'].data[0], 'conv4_1', alpha)
     relevances = propagate_pooling(net, relevances, net.blobs['conv3_3'].data[0], 'pool3', 2) # relevances of conv3_3
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', 'conv3_2', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', 'conv3_1', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool2'].data[0], 'conv3_1', 'pool2', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool2'].data[0], 'conv3_1', alpha)
     relevances = propagate_pooling(net, relevances, net.blobs['conv2_2'].data[0], 'pool2', 2) # relevances of conv2_2
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', 'conv2_1', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool1'].data[0], 'conv2_1', 'pool1', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool1'].data[0], 'conv2_1', alpha)
     relevances = propagate_pooling(net, relevances, net.blobs['conv1_2'].data[0], 'pool1', 2) # relevances of conv1_2
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', 'conv1_1', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', alpha)
 	# Finally do input layer
-    relevances = propagate_first_conv(net, relevances, net.blobs['data'].data[0], 'conv1_1', 'data', h, l)
-
+    relevances = propagate_first_conv(net, relevances, net.blobs['data'].data[0], 'conv1_1', h, l)
     relevances =  np.mean(relevances.transpose(1,2,0), 2)
 
     return relevances
-
-def generateNetCopy(architecture, weights):
-    return caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
