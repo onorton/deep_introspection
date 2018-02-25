@@ -27,10 +27,6 @@ def test_relevances_propagated_fully_connected_layers_different_sizes():
     activations = np.array([0.1, 0.4])
     assert(np.isclose(lrp.propagate_fully_connected(relevances, weights, activations, 0.5), np.array([0.238345865,0.51165414])).all())
 
-def test_relevances_propagated_pooling_layer():
-    relevances = np.array([0.5, 0.4])
-    activations = np.array([0.2,0.3,0.4,0.5])
-    assert(np.isclose(lrp.propagate_pooling(relevances, activations), np.array([0.128571429,0.192857143,0.257142857,0.321428571])).all())
 
 def test_lrp_image():
     caffe.set_device(0)  # if we have multiple GPUs, pick the first one
@@ -41,7 +37,4 @@ def test_lrp_image():
     net.image_dims = newSize
     relevances = lrp.calculate_lrp_heatmap(net, img,'deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel')
 
-    plt.imshow(relevances, 'jet', alpha=0.5)
-    plt.colorbar()
-    plt.show()
-    assert(False)
+    assert(relevances.shape == (224,224))

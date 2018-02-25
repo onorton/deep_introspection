@@ -111,7 +111,7 @@ def backprop(s, weights, x):
     dX = im2col.col2im_indices(dX_col, x.shape, 3, 3)
     return dX[0]
 
-def propagate_pooling(net, relevances, activations, layer, k):
+def propagate_pooling(net, relevances, activations, poolLayer, k):
     """Calculates the layer-wise relevance propagations for a given pooling layer
     inputs
     relevances: relevances of higher layer
@@ -119,26 +119,44 @@ def propagate_pooling(net, relevances, activations, layer, k):
     output
     relevances of current layer
     """
-
-    net.blobs[layer] = activations
-    net.forward(start = layer, end = layer)
-    print(layer)
-    print(net.blobs[layer])
-    print(activations)
-    z = net.blobs[layer]+1e-9
+    z = forwardMax(activations, k, net.blobs[poolLayer].data[0].shape)+1e-9
     s = relevances/z
-
-    net.blobs[layer] = s
-    net.backward(start = layer, end = layer)
-    c = net.blobs[layer]
-
+    c = backwardMax(s, activations, k)
     relevances = activations*c
-    # Resize relevances when unpooling (Each neuron of k*k field has equal relevance)
-    relevances_unpooled = np.zeros(shape=(relevances.flatten().shape[0],k*k))
-    for i in range(k*k):
-        relevances_unpooled[:,i] = relevances.flatten()/(k*k)
-    relevances = relevances_unpooled.flatten().reshape((relevances.shape[0],relevances.shape[1]*k,relevances.shape[2]*k))
+
     return relevances
+
+def forwardMax(x,k, shape):
+    x_reshaped = x.reshape((1,)+x.shape)
+    x_reshaped = x_reshaped.reshape(x_reshaped.shape[1], 1, x_reshaped.shape[2], x_reshaped.shape[3])
+    x_col = im2col.im2col_indices(x_reshaped, k, k, padding=0, stride=k)
+
+    max_idx = np.argmax(x_col, axis=0)
+
+    out = x_col[max_idx, range(max_idx.size)]
+
+    out = out.reshape(shape[1], shape[2], 1, shape[0])
+
+    out = out.transpose(2, 3, 0, 1)
+    return out[0]
+
+def backwardMax(s, x, k):
+    x_reshaped = x.reshape((1,)+x.shape)
+    x_reshaped = x_reshaped.reshape(x_reshaped.shape[1], 1, x_reshaped.shape[2], x_reshaped.shape[3])
+    x_col = im2col.im2col_indices(x_reshaped, k, k, padding=0, stride=k)
+
+    max_idx = np.argmax(x_col, axis=0)
+
+    dX_col = np.zeros_like(x_col)
+
+    s = s.reshape((1,)+s.shape)
+    dout_flat = s.transpose(2, 3, 0, 1).ravel()
+    dX_col[max_idx, range(max_idx.size)] = dout_flat
+
+    dX = im2col.col2im_indices(dX_col, (x.shape[0],1,x.shape[1],x.shape[2]), k, k, padding=0, stride=k)
+
+    dX = dX.reshape(x.shape)
+    return dX
 
 def calculate_lrp_heatmap(net, img, architecture, weights):
     """Calculates the layer-wise relevance propagations for a given network and image
@@ -152,35 +170,37 @@ def calculate_lrp_heatmap(net, img, architecture, weights):
     net.predict([img])
     prediction = np.argmax(net.blobs['prob'].data[0])
     relevances = np.zeros(net.blobs['prob'].data[0].shape)
-    relevances[prediction] = 1.0
+    relevances[prediction] = 100.0
     l = np.amin(img)
     h = np.amax(img)
+    alpha = 2
+    print("Using alpha " + str(alpha) + " and beta " + str(alpha-1))
 
-    relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc8'][0].data), net.blobs['fc7'].data[0], 1) # relevances of fc7
-    relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc7'][0].data), net.blobs['fc6'].data[0], 1) # relevances of fc6
-    relevances = propagate_fully_to_conv(relevances, np.transpose(net.params['fc6'][0].data), net.blobs['pool5'].data[0], 1) # relevances of pool5
-    relevances = propagate_pooling(net, relevances, net.blobs['pool5'].data[0], 'pool5', 2) # relevances of conv5_3
+    relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc8'][0].data), net.blobs['fc7'].data[0], alpha) # relevances of fc7
+    relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc7'][0].data), net.blobs['fc6'].data[0], alpha) # relevances of fc6
+    relevances = propagate_fully_to_conv(relevances, np.transpose(net.params['fc6'][0].data), net.blobs['pool5'].data[0], alpha) # relevances of pool5
+    relevances = propagate_pooling(net, relevances, net.blobs['conv5_3'].data[0], 'pool5', 2) # relevances of conv5_3
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', 'conv5_2', 1) # relevances of conv5_2
-    relevances = propagate_conv(net, relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', 'conv5_1', 1)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool4'].data[0], 'conv5_1', 'pool4', 1)
-    relevances = propagate_pooling(net, relevances, net.blobs['pool4'].data[0], 'pool4', 2) # relevances of conv4_3
+    relevances = propagate_conv(net, relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', 'conv5_2', alpha) # relevances of conv5_2
+    relevances = propagate_conv(net, relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', 'conv5_1', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool4'].data[0], 'conv5_1', 'pool4', alpha)
+    relevances = propagate_pooling(net, relevances, net.blobs['conv4_3'].data[0], 'pool4', 2) # relevances of conv4_3
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', 'conv4_2', 1)
-    relevances = propagate_conv(net, relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', 'conv4_1', 1)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool3'].data[0], 'conv4_1', 'pool3', 1)
-    relevances = propagate_pooling(net, relevances, net.blobs['pool3'].data[0], 'pool3', 2) # relevances of conv3_3
+    relevances = propagate_conv(net, relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', 'conv4_2', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', 'conv4_1', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool3'].data[0], 'conv4_1', 'pool3', alpha)
+    relevances = propagate_pooling(net, relevances, net.blobs['conv3_3'].data[0], 'pool3', 2) # relevances of conv3_3
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', 'conv3_2', 1)
-    relevances = propagate_conv(net, relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', 'conv3_1', 1)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool2'].data[0], 'conv3_1', 'pool2', 1)
-    relevances = propagate_pooling(net, relevances, net.blobs['pool2'].data[0], 'pool2', 2) # relevances of conv2_2
+    relevances = propagate_conv(net, relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', 'conv3_2', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', 'conv3_1', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool2'].data[0], 'conv3_1', 'pool2', alpha)
+    relevances = propagate_pooling(net, relevances, net.blobs['conv2_2'].data[0], 'pool2', 2) # relevances of conv2_2
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', 'conv2_1', 1)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool1'].data[0], 'conv2_1', 'pool1', 1)
-    relevances = propagate_pooling(net, relevances, net.blobs['pool1'].data[0], 'pool1', 2) # relevances of conv1_2
+    relevances = propagate_conv(net, relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', 'conv2_1', alpha)
+    relevances = propagate_conv(net, relevances,  net.blobs['pool1'].data[0], 'conv2_1', 'pool1', alpha)
+    relevances = propagate_pooling(net, relevances, net.blobs['conv1_2'].data[0], 'pool1', 2) # relevances of conv1_2
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', 'conv1_1', 1)
+    relevances = propagate_conv(net, relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', 'conv1_1', alpha)
 	# Finally do input layer
     relevances = propagate_first_conv(net, relevances, net.blobs['data'].data[0], 'conv1_1', 'data', h, l)
 
