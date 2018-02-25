@@ -11,7 +11,7 @@ def get_layer_names(net) :
     list of layer names
     """
 
-    layer_names = []
+    layer_names = ['data']
 
     for i in range(len(list(net._layer_names))):
         if net.layers[i].type == 'Convolution' or net.layers[i].type == 'Pooling' or net.layers[i].type == 'InnerProduct':
@@ -175,34 +175,54 @@ def calculate_lrp_heatmap(net, img, architecture, weights):
     alpha = 2
     print("Using alpha " + str(alpha) + " and beta " + str(alpha-1))
     print(prediction)
+    layer_names = get_layer_names(net)
+    layer_names.reverse()
 
-    relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc8'][0].data), net.blobs['fc7'].data[0], alpha) # relevances of fc7
-    relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc7'][0].data), net.blobs['fc6'].data[0], alpha) # relevances of fc6
-    relevances = propagate_fully_to_conv(relevances, np.transpose(net.params['fc6'][0].data), net.blobs['pool5'].data[0], alpha) # relevances of pool5
-    relevances = propagate_pooling(net, relevances, net.blobs['conv5_3'].data[0], 'pool5', 2) # relevances of conv5_3
+    for index in range(len(layer_names)-1) :
+        name = layer_names[index]
+        next_layer = layer_names[index+1]
+        layer_type = net.layers[list(net._layer_names).index(name)].type
 
-    relevances = propagate_conv(net, relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', alpha) # relevances of conv5_2
-    relevances = propagate_conv(net, relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool4'].data[0], 'conv5_1', alpha)
-    relevances = propagate_pooling(net, relevances, net.blobs['conv4_3'].data[0], 'pool4', 2) # relevances of conv4_3
-
-    relevances = propagate_conv(net, relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool3'].data[0], 'conv4_1', alpha)
-    relevances = propagate_pooling(net, relevances, net.blobs['conv3_3'].data[0], 'pool3', 2) # relevances of conv3_3
-
-    relevances = propagate_conv(net, relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool2'].data[0], 'conv3_1', alpha)
-    relevances = propagate_pooling(net, relevances, net.blobs['conv2_2'].data[0], 'pool2', 2) # relevances of conv2_2
-
-    relevances = propagate_conv(net, relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', alpha)
-    relevances = propagate_conv(net, relevances,  net.blobs['pool1'].data[0], 'conv2_1', alpha)
-    relevances = propagate_pooling(net, relevances, net.blobs['conv1_2'].data[0], 'pool1', 2) # relevances of conv1_2
-
-    relevances = propagate_conv(net, relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', alpha)
-	# Finally do input layer
-    relevances = propagate_first_conv(net, relevances, net.blobs['data'].data[0], 'conv1_1', h, l)
+        if layer_type == 'Pooling':
+            relevances = propagate_pooling(net, relevances, net.blobs[next_layer].data[0], name, 2)
+        elif layer_type == 'InnerProduct':
+            next_layer_type = net.layers[list(net._layer_names).index(next_layer)].type
+            if next_layer_type != 'InnerProduct' :
+                relevances = propagate_fully_to_conv(relevances, np.transpose(net.params[name][0].data), net.blobs[next_layer].data[0], alpha)
+            else:
+                relevances = propagate_fully_connected(relevances, np.transpose(net.params[name][0].data), net.blobs[next_layer].data[0], alpha) # relevances of fc6
+        elif layer_type == 'Convolution' and next_layer == 'data':
+            relevances = propagate_first_conv(net, relevances, net.blobs[next_layer].data[0], name, h, l)
+        elif layer_type == 'Convolution':
+            relevances =  propagate_conv(net, relevances,  net.blobs[next_layer].data[0], name, alpha)
+    #
+    # relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc8'][0].data), net.blobs['fc7'].data[0], alpha) # relevances of fc7
+    # relevances = propagate_fully_connected(relevances, np.transpose(net.params['fc7'][0].data), net.blobs['fc6'].data[0], alpha) # relevances of fc6
+    # relevances = propagate_fully_to_conv(relevances, np.transpose(net.params['fc6'][0].data), net.blobs['pool5'].data[0], alpha) # relevances of pool5
+    # relevances = propagate_pooling(net, relevances, net.blobs['conv5_3'].data[0], 'pool5', 2) # relevances of conv5_3
+    #
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv5_2'].data[0], 'conv5_3', alpha) # relevances of conv5_2
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv5_1'].data[0], 'conv5_2', alpha)
+    # relevances = propagate_conv(net, relevances,  net.blobs['pool4'].data[0], 'conv5_1', alpha)
+    # relevances = propagate_pooling(net, relevances, net.blobs['conv4_3'].data[0], 'pool4', 2) # relevances of conv4_3
+    #
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv4_2'].data[0], 'conv4_3', alpha)
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv4_1'].data[0], 'conv4_2', alpha)
+    # relevances = propagate_conv(net, relevances,  net.blobs['pool3'].data[0], 'conv4_1', alpha)
+    # relevances = propagate_pooling(net, relevances, net.blobs['conv3_3'].data[0], 'pool3', 2) # relevances of conv3_3
+    #
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv3_2'].data[0], 'conv3_3', alpha)
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv3_1'].data[0], 'conv3_2', alpha)
+    # relevances = propagate_conv(net, relevances,  net.blobs['pool2'].data[0], 'conv3_1', alpha)
+    # relevances = propagate_pooling(net, relevances, net.blobs['conv2_2'].data[0], 'pool2', 2) # relevances of conv2_2
+    #
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv2_2'].data[0], 'conv2_2', alpha)
+    # relevances = propagate_conv(net, relevances,  net.blobs['pool1'].data[0], 'conv2_1', alpha)
+    # relevances = propagate_pooling(net, relevances, net.blobs['conv1_2'].data[0], 'pool1', 2) # relevances of conv1_2
+    #
+    # relevances = propagate_conv(net, relevances,  net.blobs['conv1_1'].data[0], 'conv1_2', alpha)
+	# # Finally do input layer
+    # relevances = propagate_first_conv(net, relevances, net.blobs['data'].data[0], 'conv1_1', h, l)
     relevances =  np.mean(relevances.transpose(1,2,0), 2)
 
     return relevances
