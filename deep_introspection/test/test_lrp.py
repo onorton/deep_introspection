@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import caffe
 
+
+
 def test_layers_found_should_be_in_order():
     caffe.set_device(0)  # if we have multiple GPUs, pick the first one
     caffe.set_mode_gpu()
@@ -35,6 +37,6 @@ def test_lrp_image():
 
     img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
     net.image_dims = newSize
-    relevances = lrp.calculate_lrp_heatmap(net, img,'deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel')
+    relevances = lrp.calculate_lrp_heatmap(net, img,'deep_introspection/test/VGG.prototxt')
 
     assert(relevances.shape == (224,224))
