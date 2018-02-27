@@ -3,6 +3,7 @@ import numpy as np
 from skimage import util
 
 num = 10
+size = 500
 
 def random_transform_matrix():
 
@@ -15,8 +16,8 @@ def random_transform_matrix():
 
     # define translation matrix
     translate = np.identity(3)
-    x = 250*(2*np.random.rand()-1)
-    y = 250*(2*np.random.rand()-1)
+    x = size/2*(2*np.random.rand()-1)
+    y = size/2*(2*np.random.rand()-1)
     translate[0,2] = x
     translate[1,2] = y
 
@@ -36,19 +37,19 @@ def random_quad_matrix():
 
 
 def generate_noisy_image():
-    im = np.zeros(shape=(500,500,3))
+    im = np.zeros(shape=(size,size,3))
     im = 255*util.random_noise(im, mode='gaussian', mean=0.5)
     im = Image.fromarray(np.uint8(im))
     return im
 
 def generate_quad():
     points = np.array([[200,200,1],[300,200,1],[300,300,1],[200,300,1]])
-    points[:,0:2] -= 250
+    points[:,0:2] -= size//2
     points = points.transpose()
 
     m = random_quad_matrix()
     points = np.matmul(m, points).transpose()
-    points[:,0:2] += 250
+    points[:,0:2] += size//2
 
     point_list = []
     for p in points:
@@ -60,23 +61,30 @@ def generate_quad():
     return im
 
 def generate_ellipse():
-    points = np.array([[200,200,1],[300,300,1]])
-    points[:,0:2] -= 250
+    points = np.array([[425,425,1],[575,575,1]])
+    points[:,0:2] -= size
     points = points.transpose()
 
     m = random_transform_matrix()
     points = np.matmul(m, points).transpose()
-    points[:,0:2] += 250
+    points[:,0:2] += size
 
     point_list = []
     for p in points:
         point_list.append((p[0]/p[2],p[1]/p[2]))
-    print(point_list)
 
-    im = generate_noisy_image()
+
+    im = np.zeros(shape=(2*size,2*size,3))
+    im = Image.fromarray(np.uint8(im))
     draw = ImageDraw.Draw(im)
     draw.ellipse(point_list, fill=(255,255,255))
-    return im
+    im = im.rotate(np.random.rand()*360).resize((size, size))
+    im = np.array(im)
+    bg = np.array(generate_noisy_image()).flatten()
+    indices = np.argwhere(im.flatten() > 0)
+    bg[indices] = 255
+    bg = bg.reshape((size,size,3))
+    return Image.fromarray(np.uint8(bg))
 
 for i in range(num):
     quad = generate_quad()
