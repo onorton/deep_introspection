@@ -10,7 +10,6 @@ def generate_noisy_image():
     im = Image.fromarray(np.uint8(im))
     return im
 
-
 def generate_quad():
     points = np.array([[200,200],[300,200],[300,300],[200,300]])
 
@@ -23,6 +22,22 @@ def generate_quad():
     draw.polygon(point_list, fill=(255,255,255))
     return im
 
+def generate_ellipse():
+    points = np.array([[200,200],[300,300]])
+
+    point_list = []
+    for p in points:
+        point_list.append((p[0],p[1]))
+
+    im = generate_noisy_image()
+    draw = ImageDraw.Draw(im)
+    draw.ellipse(point_list, fill=(255,255,255))
+    return im
+
 for i in range(num):
     quad = generate_quad()
     quad.save('data/quads/quad_'+str(i)+'.jpg')
+
+for i in range(num):
+    ellipse = generate_ellipse()
+    ellipse.save('data/ellipses/ellipse_'+str(i)+'.jpg')
