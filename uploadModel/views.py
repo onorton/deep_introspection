@@ -28,7 +28,7 @@ def index(request):
             model.weights = 'models/'+filename
             model.save()
             return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Model successfully uploaded.\"}")
-        saveFile('models/'+filename+'.'+str(body['blobNum']), body['part'])
+        save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     elif request.method == 'GET':
         if TestModel.objects.first() != None:
@@ -49,7 +49,7 @@ def architecture(request):
         if TestModel.objects.filter(name=name).count() != 0:
             return HttpResponse("{}",status=409)
 
-        saveFile('models/'+filename, body['file'])
+        save_file('models/'+filename, body['file'])
         model = TestModel(name=name, architecture='models/'+filename)
         model.save()
         return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Architecture successfully uploaded.\"}")
@@ -61,14 +61,14 @@ def labels(request):
         body = json.loads(request.body.decode("utf-8"))
         filename = body['filename']
         name = body['name']
-        saveFile('models/'+filename, body['file'])
+        save_file('models/'+filename, body['file'])
         model = TestModel.objects.filter(name=name).first()
         model.labels = 'models/'+filename
         model.save()
         return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Labels successfully uploaded.\"}")
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
 
-def saveFile(path, file):
+def save_file(path, file):
     up = urllib.parse.urlparse(file)
     head, data = up.path.split(',', 1)
     bits = head.split(';')
