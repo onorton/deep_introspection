@@ -1,9 +1,13 @@
 from PIL import Image, ImageDraw
 import numpy as np
 from skimage import util
+import os
 
-num = 10
+train = 90
+test = 10
+
 size = 500
+
 
 def random_transform_matrix():
 
@@ -86,10 +90,26 @@ def generate_ellipse():
     bg = bg.reshape((size,size,3))
     return Image.fromarray(np.uint8(bg))
 
-for i in range(num):
-    quad = generate_quad()
-    quad.save('data/quads/quad_'+str(i)+'.jpg')
+if not os.path.exists('data/train/quads'):
+  os.makedirs('data/train/quads')
 
-for i in range(num):
+if not os.path.exists('data/test/quads'):
+  os.makedirs('data/test/quads')
+
+if not os.path.exists('data/train/ellipses'):
+  os.makedirs('data/train/ellipses')
+
+if not os.path.exists('data/test/ellipses'):
+  os.makedirs('data/test/ellipses')
+
+for i in range(train):
+    quad = generate_quad()
+    quad.save('data/train/quads/quad_'+str(i)+'.jpg')
     ellipse = generate_ellipse()
-    ellipse.save('data/ellipses/ellipse_'+str(i)+'.jpg')
+    ellipse.save('data/train/ellipses/ellipse_'+str(i)+'.jpg')
+
+for i in range(test):
+    quad = generate_quad()
+    quad.save('data/test/quads/quad_'+str(i)+'.jpg')
+    ellipse = generate_ellipse()
+    ellipse.save('data/test/ellipses/ellipse_'+str(i)+'.jpg')
