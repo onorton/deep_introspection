@@ -3,13 +3,21 @@ import numpy as np
 from skimage import util
 import os
 
-train = 90
-test = 10
+train = 8192
+test = 1024
 
-size = 500
+size = 224
 
 
-def random_transform_matrix():
+def random_quad_matrix():
+    # define rotation matrix
+    rotation = np.identity(3)
+    sin = 2*np.random.rand()-1
+    cos = 2*np.random.rand()-1
+    rotation[0,0] = cos
+    rotation[0,1] = -sin
+    rotation[1,0] = sin
+    rotation[1,1] = cos
 
     # define scaling matrix
     scale = np.identity(3)
@@ -25,19 +33,25 @@ def random_transform_matrix():
     translate[0,2] = x
     translate[1,2] = y
 
+    return np.matmul(np.matmul(translate, scale), rotation)
+
+def random_ellipse_matrix():
+    # define scaling matrix
+    scale = np.identity(3)
+    x = 3*np.random.rand()+0.5
+    y = 3*np.random.rand()+0.5
+    scale[0,0] = x
+    scale[1,1] = y
+
+    # define translation matrix
+    translate = np.identity(3)
+    x = size/3*(2*np.random.rand()-1)
+    y = size/3*(2*np.random.rand()-1)
+    translate[0,2] = x
+    translate[1,2] = y
+
     return np.matmul(translate, scale)
 
-def random_quad_matrix():
-    m = random_transform_matrix()
-    # define rotation matrix
-    rotation = np.identity(3)
-    sin = 2*np.random.rand()-1
-    cos = 2*np.random.rand()-1
-    rotation[0,0] = cos
-    rotation[0,1] = -sin
-    rotation[1,0] = sin
-    rotation[1,1] = cos
-    return np.matmul(m, rotation)
 
 
 def generate_noisy_image():
@@ -45,9 +59,8 @@ def generate_noisy_image():
     im = 255*util.random_noise(im, mode='gaussian', mean=0.5)
     im = Image.fromarray(np.uint8(im))
     return im
-
 def generate_quad():
-    points = np.array([[200,200,1],[300,200,1],[300,300,1],[200,300,1]])
+    points = np.array([[87,87,1],[87,137,1],[137,137,1],[137,87,1]])
     points[:,0:2] -= size//2
     points = points.transpose()
 
@@ -65,20 +78,20 @@ def generate_quad():
     return im
 
 def generate_ellipse():
-    points = np.array([[425,425,1],[575,575,1]])
-    points[:,0:2] -= size
+    points = np.array([[87,87,1],[137,137,1]])
+    points[:,0:2] -= size//2
     points = points.transpose()
 
-    m = random_transform_matrix()
+    m = random_ellipse_matrix()
     points = np.matmul(m, points).transpose()
-    points[:,0:2] += size
+    points[:,0:2] += size//2 + 87
 
     point_list = []
     for p in points:
         point_list.append((p[0]/p[2],p[1]/p[2]))
 
 
-    im = np.zeros(shape=(2*size,2*size,3))
+    im = np.zeros(shape=(size*2,size*2,3))
     im = Image.fromarray(np.uint8(im))
     draw = ImageDraw.Draw(im)
     draw.ellipse(point_list, fill=(255,255,255))
@@ -90,26 +103,20 @@ def generate_ellipse():
     bg = bg.reshape((size,size,3))
     return Image.fromarray(np.uint8(bg))
 
-if not os.path.exists('data/train/quads'):
-  os.makedirs('data/train/quads')
+if not os.path.exists('data/test'):
+  os.makedirs('data/test')
 
-if not os.path.exists('data/test/quads'):
-  os.makedirs('data/test/quads')
-
-if not os.path.exists('data/train/ellipses'):
-  os.makedirs('data/train/ellipses')
-
-if not os.path.exists('data/test/ellipses'):
-  os.makedirs('data/test/ellipses')
+if not os.path.exists('data/train'):
+  os.makedirs('data/train')
 
 for i in range(train):
     quad = generate_quad()
-    quad.save('data/train/quads/quad_'+str(i)+'.jpg')
+    quad.save('data/train/quad_'+str(i)+'.jpg')
     ellipse = generate_ellipse()
-    ellipse.save('data/train/ellipses/ellipse_'+str(i)+'.jpg')
+    ellipse.save('data/train/ellipse_'+str(i)+'.jpg')
 
 for i in range(test):
     quad = generate_quad()
-    quad.save('data/test/quads/quad_'+str(i)+'.jpg')
+    quad.save('data/test/quad_'+str(i)+'.jpg')
     ellipse = generate_ellipse()
-    ellipse.save('data/test/ellipses/ellipse_'+str(i)+'.jpg')
+    ellipse.save('data/test/ellipse_'+str(i)+'.jpg')
