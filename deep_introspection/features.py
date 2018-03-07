@@ -1,31 +1,56 @@
 import numpy as np
 from scipy.cluster.vq import kmeans, whiten
 
+
+def find_cluster(x, y, relevances, visited):
+    queue = []
+    cluster = []
+    queue.append((x,y))
+    visited[x, y] = True
+    max_distance = 5
+    while queue:
+        point = queue.pop()
+        cluster.append(point)
+        for i in range(-max_distance,max_distance+1):
+            for j in range(-max_distance,max_distance+1):
+                if point[0]+i >= 0 and point[0]+i < relevances.shape[0] and point[1]+j >= 0 and point[1]+j < relevances.shape[1] and not (i == 0 and j == 0) and not visited[point[0]+i,point[1]+j] and relevances[point[0]+i,point[1]+j] != 0:
+                    visited[point[0]+i,point[1]+j] = True
+                    queue.append((point[0]+i,point[1]+j))
+    return cluster
+
 def extract_features_from_relevances(relevances):
-    """Extracts "blobs" of relevant features from a set of LRP relevances
+    """Extracts "clusters" of relevant features from a set of LRP relevances
     inputs
     relevances: relevances generating from a particular neural network, test image and class label
     output
-    array of blobs of relevant pixels
+    array of clusters of relevant pixels
     """
+    # normalise so that total relevance is 1
+    relevances/=np.sum(relevances)
 
-    threshold = 0.0001
-    k = 5
+    threshold = 10/relevances.flatten().shape[0]
+    min_cluster_size = 10
+
+    # Remove relevances at edges
+    mask = np.ones(relevances.shape, np.bool)
+    mask[2:relevances.shape[0]-2,2:relevances.shape[1]-2] = 0
+    relevances[mask] = 0
 
     relevances[np.absolute(relevances) < threshold] = 0
-    relevant_indices = np.argwhere(relevances != 0)
-    whitened_features = whiten(relevant_indices)
-    cluster_means = kmeans(whitened_features, k)[0]
-    cluster_indices = list(np.apply_along_axis(get_cluster, 1, whitened_features, cluster_means))
+
+
+    visited = np.zeros(shape=relevances.shape,dtype=np.bool)
     clusters = []
-    for i in range(k):
-        clusters.append([])
+    for x in range(relevances.shape[0]):
+        for y in range(relevances.shape[1]):
+        # start new cluster
+            if not visited[x, y] and relevances[x,y] != 0:
+                cluster = find_cluster(x, y, relevances, visited)
+                clusters.append(cluster)
+    clusters = map((lambda x: list(set(x))), clusters)
+    # filter out small clusters
+    clusters = filter((lambda x: len(x) > min_cluster_size), clusters)
 
-    for i, c in enumerate(cluster_indices):
-        clusters[c].append(relevant_indices[i])
-
-    for i in range(k):
-        clusters[i] = np.array(clusters[i])
 
     return clusters
 
