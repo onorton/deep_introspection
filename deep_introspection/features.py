@@ -7,6 +7,8 @@ def find_cluster(x, y, relevances, visited):
     cluster = []
     queue.append((x,y))
     visited[x, y] = True
+
+    # Maximum distance (in a square) that pixels can be added
     max_distance = 5
     while queue:
         point = queue.pop()
@@ -28,7 +30,9 @@ def extract_features_from_relevances(relevances):
     # normalise so that total relevance is 1
     relevances/=np.sum(relevances)
 
+    # minimum absolute threshold for relevances to keep
     threshold = 10/relevances.flatten().shape[0]
+    # minimum size for a cluster to keep
     min_cluster_size = 10
 
     # Remove relevances at edges
