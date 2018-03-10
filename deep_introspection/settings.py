@@ -40,8 +40,9 @@ INSTALLED_APPS = [
     'webpack_loader',
 
     'corsheaders',
-    'uploadImage',
-    'uploadModel',
+    'apps.uploadImage',
+    'apps.uploadModel',
+
 ]
 WEBPACK_LOADER = {
 'DEFAULT': {

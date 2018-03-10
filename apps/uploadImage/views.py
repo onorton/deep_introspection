@@ -4,7 +4,7 @@ import base64
 import json
 import urllib.parse
 import hashlib
-from uploadImage.models import TestImage
+from apps.uploadImage.models import TestImage
 
 @csrf_exempt
 def index(request):

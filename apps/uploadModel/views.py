@@ -5,7 +5,7 @@ import json
 import urllib.parse
 import glob
 import os
-from uploadModel.models import TestModel
+from apps.uploadModel.models import TestModel
 
 @csrf_exempt
 def index(request):

@@ -22,8 +22,8 @@ from django.conf import settings
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name="index.html")),
-    path('uploadImage/', include('uploadImage.urls')),
-    path('uploadModel/', include('uploadModel.urls')),
+    path('uploadImage/', include('apps.uploadImage.urls')),
+    path('uploadModel/', include('apps.uploadModel.urls')),
     path('admin/', admin.site.urls),
 ]
 if settings.DEBUG is True:
