@@ -9,7 +9,7 @@ export default class ImageCollection extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      imageUrls: [],
+      images: [],
       selected: 0
     };
   }
@@ -24,8 +24,9 @@ export default class ImageCollection extends Component {
     }).then(function(response) {
       if (response.status == 200) {
         response.json().then(function(data) {
-          collection.setState({imageUrls: data.urls})
-          collection.props.callbackParent(data.urls[0])
+          console.log(data.images)
+          collection.setState({images: data.images})
+          collection.props.callbackParent(data.images[0])
 
         })
       }
@@ -38,7 +39,7 @@ export default class ImageCollection extends Component {
 
 
   select(index) {
-    this.props.callbackParent(this.state.imageUrls[index])
+    this.props.callbackParent(this.state.images[index])
     this.setState({selected:index})
   }
 
@@ -82,8 +83,8 @@ export default class ImageCollection extends Component {
         if (response.status == 200) {
           response.json().then(function(data) {
             urls.push('http://127.0.0.1:8000/media/images/' + data.filename);
-            collection.setState({imageUrls: urls})
-            if(collection.state.imageUrls.length == 1) {
+            collection.setState({images: urls})
+            if(collection.state.images.length == 1) {
               collection.select(0);
             }
 
@@ -121,7 +122,7 @@ export default class ImageCollection extends Component {
           <input  type="file" accept="image/*" onChange={(event) => this.saveImage(event.target.files[0])} type="file"/>
         </label>
         </div>
-        {this.state.imageUrls.length == 0 ? (
+        {this.state.images.length == 0 ? (
 
         <div class="pt-non-ideal-state" style={{height:150, paddingTop:20}}>
         <div class="pt-non-ideal-state-visual pt-non-ideal-state-icon">
@@ -135,8 +136,8 @@ export default class ImageCollection extends Component {
         <Scrollbars style={this.props.style}>
           <ul style={{listStyleType: 'none', padding: 0, margin: 0}}>
            {
-             this.state.imageUrls.map(function(url, index){
-           return <li style={{padding: '5px 0px 5px 0px'}}><img src={url} onClick={() => collection.select(index)} style={(index == selected) ? selectedStyle : imageStyle} /></li>;
+             this.state.images.map(function(image, index){
+           return <li style={{padding: '5px 0px 5px 0px'}}><img src={image.url} onClick={() => collection.select(index)} style={(index == selected) ? selectedStyle : imageStyle} /></li>;
                    })}
            </ul>
         </Scrollbars>

@@ -33,6 +33,7 @@ def index(request):
             return HttpResponse("{}",status=409)
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"File successfully uploaded.\"}")
     elif request.method == 'GET':
-        urls = list(map(lambda item: item.image.url, list(TestImage.objects.all())))
-        return HttpResponse("{\"urls\":"+ json.dumps(urls) + "}")
+        images = list(map(lambda item: {'id': item.id, 'url': item.image.url}, list(TestImage.objects.all())))
+        print(images)
+        return HttpResponse("{\"images\":"+ json.dumps(images) + "}")
     return HttpResponse("{message: \"Invalid method.\"}", status=405)

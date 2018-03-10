@@ -5,7 +5,7 @@ export default class OcclusionTool extends Component {
   render(){
     return (
     <div className="toolArea">
-    {(this.props.testImage != undefined) ? <img src={this.props.testImage} style={{maxWidth:300, maxHeight:300, float:"right", marginRight:20, borderStyle:"solid", borderColor:"#10161A"}}/> : <div/>}
+    {(this.props.testImage != undefined) ? <img src={this.props.testImage.url} style={{maxWidth:300, maxHeight:300, float:"right", marginRight:20, borderStyle:"solid", borderColor:"#10161A"}}/> : <div/>}
     </div>
     )
   }
