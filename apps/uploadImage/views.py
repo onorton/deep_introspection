@@ -29,9 +29,9 @@ def index(request):
             img.save()
             with open('images/'+name, "wb") as f:
                 f.write(base64.b64decode(data))
+            return HttpResponse("{\"id\":" + str(img.id) + ", \"filename\": \"" + name + "\", \"message\": \"File successfully uploaded.\"}")
         else:
             return HttpResponse("{}",status=409)
-        return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"File successfully uploaded.\"}")
     elif request.method == 'GET':
         images = list(map(lambda item: {'id': item.id, 'url': item.image.url}, list(TestImage.objects.all())))
         print(images)

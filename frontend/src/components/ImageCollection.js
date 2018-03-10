@@ -24,7 +24,6 @@ export default class ImageCollection extends Component {
     }).then(function(response) {
       if (response.status == 200) {
         response.json().then(function(data) {
-          console.log(data.images)
           collection.setState({images: data.images})
           collection.props.callbackParent(data.images[0])
 
@@ -58,7 +57,7 @@ export default class ImageCollection extends Component {
   }
 
   saveImage(img) {
-    const urls = this.state.imageUrls;
+    const urls = this.state.images;
     const name = img.name;
     const collection = this;
     // Check that file has image extension, alert user if not
@@ -82,7 +81,7 @@ export default class ImageCollection extends Component {
 
         if (response.status == 200) {
           response.json().then(function(data) {
-            urls.push('http://127.0.0.1:8000/media/images/' + data.filename);
+            urls.push({id: data.id, url: 'http://127.0.0.1:8000/media/images/' + data.filename});
             collection.setState({images: urls})
             if(collection.state.images.length == 1) {
               collection.select(0);
