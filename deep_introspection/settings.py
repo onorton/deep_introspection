@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'apps.uploadImage',
     'apps.uploadModel',
+    'apps.features',
 
 ]
 WEBPACK_LOADER = {

@@ -31,7 +31,7 @@ class App extends Component {
         </header>
         <UploadModelOverlay callbackParent={(model) => this.onTestModelChanged(model)}/>
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 110, width:"100%" }}>
-          <ToolCollection testImage={this.state.testImage}/>
+          {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
         </div>
         <ImageCollection callbackParent={(img) => this.onTestImageChanged(img)} style={{width:250, height:750}}/>
       </div>
