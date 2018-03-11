@@ -53,7 +53,6 @@ export default class OcclusionTool extends Component {
 
       if (response.status == 200) {
         response.json().then(function(data) {
-          console.log(data.predictions)
           tool.setState({predictions: data.predictions, image: data.image})
         })
       }
@@ -63,7 +62,6 @@ export default class OcclusionTool extends Component {
 }
   render(){
     const tool = this
-    console.log(this.props.testImage.url)
     return (
     <div className="toolArea">
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
@@ -79,7 +77,7 @@ export default class OcclusionTool extends Component {
     <ul style={{listStyleType: 'none'}}>
     {
       this.state.predictions.map(function(prediction, index) {
-        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + 100*prediction.value.toFixed(2) + '%'}</li>)
+        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + (100*prediction.value).toFixed(2) + '%'}</li>)
       })
     }
     </ul>

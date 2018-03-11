@@ -15,6 +15,8 @@ import numpy as np
 
 import json
 
+import os
+
 import itertools
 
 import matplotlib.pyplot as plt
@@ -63,13 +65,12 @@ def evaluate(request, model, image):
 
     architecture = str(test_model.architecture)
     weights = str(test_model.weights)
+    labels = str(test_model.labels)
 
     net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
 
     img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
     net.image_dims = newSize
-
-
 
     random_nums = 256*np.random.uniform(size=img.shape)
 
@@ -79,21 +80,33 @@ def evaluate(request, model, image):
         img[index] = random_nums[index]-mean[2-index[2]]
 
     net.predict([img],oversample=True)
+
     predictions = np.mean(net.blobs['prob'].data, axis=0)
     top_five = list(np.asarray(predictions.argsort()[-5:][::-1],  type('int', (int,), {})))
     predictions = np.asarray(predictions, type('float', (float,), {}))
-    top_predictions = list(map(lambda x: {'label': x, 'value': predictions[x]}, top_five))
+
+    top_predictions = []
+    if labels != None :
+        labels = open(labels).readlines()
+        top_predictions = list(map(lambda x: {'label':get_label(labels[x]), 'value': predictions[x]}, top_five))
+    else :
+        top_predictions = list(map(lambda x: {'label':x, 'value': predictions[x]}, top_five))
+
 
     img[:, :, 0] += mean[2]
     img[:, :, 1] += mean[1]
     img[:, :, 2] += mean[0]
-    img = Image.fromarray(np.uint8(img))
 
+    # save modified image
+    img = Image.fromarray(np.uint8(img))
     modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + '_'.join(str(f) for f in inactive_indices) + '.jpg'
     img.save(modification_path)
-    
 
     return HttpResponse("{\"predictions\":" + json.dumps(top_predictions)+ ", \"image\": \""  + 'media/'+modification_path + "\"}")
+
+def get_label(image_label):
+    image_label = image_label.split(',')[0].strip()
+    return image_label[image_label.index(' ')+1:]
 
 def write_clusters(path, clusters):
     with open(path, "w") as f:
