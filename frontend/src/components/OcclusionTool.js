@@ -11,9 +11,11 @@ export default class OcclusionTool extends Component {
     };
   }
   componentWillReceiveProps(nextProps) {
+    this.setState({image: nextProps.testImage.url, predictions: [], features: []})
     this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
   }
   componentDidMount() {
+    this.setState({image: this.props.testImage.url, predictions: [], features:[]})
     this.fetchFeatures(this.props.testModel.id, this.props.testImage.id)
   }
 
@@ -28,7 +30,7 @@ export default class OcclusionTool extends Component {
       if (response.status == 200) {
         response.json().then(function(data) {
           const features = data.features.map(function(feature) {return {feature: feature, active: true}})
-          tool.setState({features: features})
+          tool.setState({features: features}, () => tool.fetchPredictions())
         })
       }
 
@@ -38,10 +40,14 @@ export default class OcclusionTool extends Component {
   }
 
   toggle(index) {
-    const tool = this
     var features = this.state.features
     features[index].active = !features[index].active
-    this.setState({features: features})
+    this.setState({features: features}, () => this.fetchPredictions())
+  }
+
+  fetchPredictions() {
+    const features = this.state.features
+    const tool = this
     const inactiveFeatures = features.filter(feature => !feature.active).map(feature => feature.feature)
     fetch('http://127.0.0.1:8000/features/evaluate/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
       method: 'POST',
@@ -59,7 +65,7 @@ export default class OcclusionTool extends Component {
   }).catch(function(error) {
     console.log('There has been a problem with your fetch operation: ' + error.message);
   });
-}
+  }
   render(){
     const tool = this
     return (
@@ -73,11 +79,11 @@ export default class OcclusionTool extends Component {
     })}
     </ul>
     <div className="results" style={{ float:"right", marginRight:20}}>
-    {(this.state.image != undefined) ? <img src={this.state.image} style={{maxWidth:300, maxHeight:300, borderStyle:"solid", borderColor:"#10161A"}}/> : <img src={this.props.testImage.url} style={{maxWidth:300, maxHeight:300, borderStyle:"solid", borderColor:"#10161A"}}/>}
+    <img src={this.state.image} style={{maxWidth:400, maxHeight:400, borderStyle:"solid", borderColor:"#10161A"}}/>
     <ul style={{listStyleType: 'none'}}>
     {
       this.state.predictions.map(function(prediction, index) {
-        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + (100*prediction.value).toFixed(2) + '%'}</li>)
+        return(<li style={{width:400, backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + (100*prediction.value).toFixed(2) + '%'}</li>)
       })
     }
     </ul>
