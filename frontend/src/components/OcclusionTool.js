@@ -5,11 +5,11 @@ export default class OcclusionTool extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      features: []
+      features: [],
+      predictions: []
     };
   }
   componentWillReceiveProps(nextProps) {
-    console.log("props received")
     this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
   }
   componentDidMount() {
@@ -26,7 +26,6 @@ export default class OcclusionTool extends Component {
     }).then(function(response) {
       if (response.status == 200) {
         response.json().then(function(data) {
-          console.log(data.features)
           const features = data.features.map(function(feature) {return {feature: feature, active: true}})
           tool.setState({features: features})
         })
@@ -38,11 +37,29 @@ export default class OcclusionTool extends Component {
   }
 
   toggle(index) {
+    const tool = this
     var features = this.state.features
     features[index].active = !features[index].active
     this.setState({features: features})
     const inactiveFeatures = features.filter(feature => !feature.active).map(feature => feature.feature)
-  }
+    fetch('http://127.0.0.1:8000/features/evaluate/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
+      method: 'POST',
+      body: JSON.stringify({inactiveFeatures: inactiveFeatures}),
+      headers: {
+          "Content-Type": "application/json"
+      }
+    }).then(function(response) {
+
+      if (response.status == 200) {
+        response.json().then(function(data) {
+          console.log(data.predictions)
+          tool.setState({predictions: data.predictions})
+        })
+      }
+  }).catch(function(error) {
+    console.log('There has been a problem with your fetch operation: ' + error.message);
+  });
+}
   render(){
     const tool = this
 
@@ -58,6 +75,13 @@ export default class OcclusionTool extends Component {
     </ul>
     <div className="results" style={{ float:"right", marginRight:20}}>
     {(this.props.testImage != undefined) ? <img src={this.props.testImage.url} style={{maxWidth:300, maxHeight:300, borderStyle:"solid", borderColor:"#10161A"}}/> : <div/>}
+    <ul style={{listStyleType: 'none'}}>
+    {
+      this.state.predictions.map(function(prediction, index) {
+        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label}</li>)
+      })
+    }
+    </ul>
     </div>
     </div>
     )
