@@ -6,7 +6,8 @@ export default class OcclusionTool extends Component {
     super(props);
     this.state = {
       features: [],
-      predictions: []
+      predictions: [],
+      image: null
     };
   }
   componentWillReceiveProps(nextProps) {
@@ -53,7 +54,7 @@ export default class OcclusionTool extends Component {
       if (response.status == 200) {
         response.json().then(function(data) {
           console.log(data.predictions)
-          tool.setState({predictions: data.predictions})
+          tool.setState({predictions: data.predictions, image: data.image})
         })
       }
   }).catch(function(error) {
@@ -62,7 +63,7 @@ export default class OcclusionTool extends Component {
 }
   render(){
     const tool = this
-
+    console.log(this.props.testImage.url)
     return (
     <div className="toolArea">
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
@@ -74,11 +75,11 @@ export default class OcclusionTool extends Component {
     })}
     </ul>
     <div className="results" style={{ float:"right", marginRight:20}}>
-    {(this.props.testImage != undefined) ? <img src={this.props.testImage.url} style={{maxWidth:300, maxHeight:300, borderStyle:"solid", borderColor:"#10161A"}}/> : <div/>}
+    {(this.state.image != undefined) ? <img src={this.state.image} style={{maxWidth:300, maxHeight:300, borderStyle:"solid", borderColor:"#10161A"}}/> : <img src={this.props.testImage.url} style={{maxWidth:300, maxHeight:300, borderStyle:"solid", borderColor:"#10161A"}}/>}
     <ul style={{listStyleType: 'none'}}>
     {
       this.state.predictions.map(function(prediction, index) {
-        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label}</li>)
+        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + 100*prediction.value.toFixed(2) + '%'}</li>)
       })
     }
     </ul>
