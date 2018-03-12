@@ -78,12 +78,12 @@ export default class OcclusionTool extends Component {
         return (feature.active) ? activeFeature : inactiveFeature
     })}
     </ul>
-    <div className="results" style={{ float:"right", marginRight:20}}>
-    <img src={this.state.image} style={{maxWidth:400, maxHeight:400, borderStyle:"solid", borderColor:"#10161A"}}/>
-    <ul style={{listStyleType: 'none'}}>
+    <div className="results" style={{ float:"right", width: 400, marginRight:20, height:600}}>
+    <img src={this.state.image} style={{width:'100%', borderStyle:"solid", borderColor:"#10161A"}}/>
+    <ul style={{listStyleType: 'none', height:100, padding: '0 20px 0 20px'}}>
     {
       this.state.predictions.map(function(prediction, index) {
-        return(<li style={{width:400, backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + (100*prediction.value).toFixed(2) + '%'}</li>)
+        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + (100*prediction.value).toFixed(2) + '%'}</li>)
       })
     }
     </ul>
