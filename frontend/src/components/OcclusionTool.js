@@ -83,7 +83,7 @@ export default class OcclusionTool extends Component {
     <div className="results" style={{ float:"right", width: 400, marginRight:20, height:600}}>
     <div style={{position:'relative'}}>
     <img src={this.state.image} style={{width:'100%', borderStyle:"solid", borderColor:"#10161A", zIndex:0,position:'relative', top: 0, left: 0}}/>
-    {(this.state.hover != null) ? <img src={'media/features/feature_model_'+ this.props.testModel.id + '_image_' + this.props.testImage.id + '_' + this.state.hover + '.png'} style={{width:'100%', borderStyle:"solid", borderColor:"#10161A", zIndex:1, position:'absolute', top: 0, left: 0}}/> : <div/>}
+    {(this.state.hover != null) ? <img src={'media/features/feature_model_'+ this.props.testModel.id + '_image_' + this.props.testImage.id + '_' + this.state.hover + '.png'} style={{width:'100%', zIndex:1, position:'absolute', top: 0, left: 0}}/> : <div/>}
 
     </div>
     <ul style={{listStyleType: 'none', height:100, padding: '0 20px 0 20px', position: 'relative'}}>

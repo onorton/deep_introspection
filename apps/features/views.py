@@ -48,7 +48,7 @@ def index(request, model, image):
             overlay_img = np.zeros(overlay_shape)
             for point in cluster:
                 overlay_img[point[0],point[1],0] = 255
-                overlay_img[point[0],point[1],3] = 255
+                overlay_img[point[0],point[1],3] = 128
             overlay_img = Image.fromarray(np.uint8(overlay_img))
             overlay_img.save('features/feature_model_'+ str(model) + '_image_' + str(image) +'_' + str(i) + '.png')
 
