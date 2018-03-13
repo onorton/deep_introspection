@@ -42,8 +42,17 @@ def index(request, model, image):
         net.image_dims = newSize
         relevances = lrp.calculate_lrp_heatmap(net, img, architecture)
         clusters = features.extract_features_from_relevances(relevances)
+        write_clusters(features_path, clusters)
+        overlay_shape = (img.shape[0],img.shape[1],4)
+        for i, cluster in enumerate(clusters):
+            overlay_img = np.zeros(overlay_shape)
+            for point in cluster:
+                overlay_img[point[0],point[1],0] = 255
+                overlay_img[point[0],point[1],3] = 255
+            overlay_img = Image.fromarray(np.uint8(overlay_img))
+            overlay_img.save('features/feature_model_'+ str(model) + '_image_' + str(image) +'_' + str(i) + '.png')
 
-        write_clusters(features_path,clusters)
+        write_clusters(features_path, clusters)
         feature_set = FeatureSet(model=test_model, image=TestImage.objects.filter(id=image).first(), features=features_path)
         feature_set.save()
 

@@ -60,7 +60,7 @@ def extract_features_from_relevances(relevances):
     clusters = filter((lambda x: len(x) > min_cluster_size), clusters)
 
 
-    return clusters
+    return list(clusters)
 
 def get_cluster(point, means):
     """Given a specific point and cluster means, find the closest cluster
