@@ -8,18 +8,20 @@ def find_cluster(x, y, relevances, visited):
     queue.append((x,y))
     visited[x, y] = True
 
-    # Maximum distance (in a square) that pixels can be added
-    max_distance = 2.5
-    max_distance_i = int(np.ceil(max_distance)),
+    threshold = 1
+    # Maximum distance that pixels can be added
+    max_distance = 1.5
+    max_distance_integer = int(np.ceil(max_distance))
     while queue:
         point = queue.pop()
         cluster.append(point)
-        max_distance_integer = int(np.ceil(max_distance))
 
         for i in range(-max_distance_integer,max_distance_integer+1):
             for j in range(-max_distance_integer,max_distance_integer+1):
                 d = np.linalg.norm(np.array([point[0]+i,point[1]+j])-np.array(point))
-                if point[0]+i >= 0 and point[0]+i < relevances.shape[0] and point[1]+j >= 0 and point[1]+j < relevances.shape[1] and not (i == 0 and j == 0) and not visited[point[0]+i,point[1]+j] and relevances[point[0]+i,point[1]+j] != 0 and d <= max_distance:
+                percentage_change = np.absolute(relevances[point[0]+i,point[1]+j]-relevances[point[0],point[1]])/relevances[point[0],point[1]]
+
+                if point[0]+i >= 0 and point[0]+i < relevances.shape[0] and point[1]+j >= 0 and point[1]+j < relevances.shape[1] and not (i == 0 and j == 0) and not visited[point[0]+i,point[1]+j] and relevances[point[0]+i,point[1]+j] != 0 and d <= max_distance and percentage_change < threshold:
                     visited[point[0]+i,point[1]+j] = True
                     queue.append((point[0]+i,point[1]+j))
     return cluster
@@ -35,17 +37,16 @@ def extract_features_from_relevances(relevances):
     relevances/=np.sum(relevances)
 
     # minimum absolute threshold for relevances to keep
-    threshold = 6.25/relevances.flatten().shape[0]
+    threshold = 5/relevances.flatten().shape[0]
+    relevances[np.absolute(relevances) < threshold] = 0
+
     # minimum size for a cluster to keep
-    min_cluster_size = 15
+    min_cluster_size = 20
 
     # Remove relevances at edges
     mask = np.ones(relevances.shape, np.bool)
     mask[5:relevances.shape[0]-5,5:relevances.shape[1]-5] = 0
     relevances[mask] = 0
-
-    relevances[np.absolute(relevances) < threshold] = 0
-
 
     visited = np.zeros(shape=relevances.shape,dtype=np.bool)
     clusters = []
