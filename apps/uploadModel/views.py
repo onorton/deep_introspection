@@ -5,7 +5,17 @@ import json
 import urllib.parse
 import glob
 import os
+import re
 from apps.uploadModel.models import TestModel
+
+def tryint(s):
+    try:
+        return int(s)
+    except:
+        return s
+
+def alphanum_key(s):
+    return [tryint(c) for c in re.split('([0-9]+)', s)]
 
 @csrf_exempt
 def index(request):
@@ -16,6 +26,9 @@ def index(request):
         if body['blobNum'] == -1:
             # Combine all parts of the file together
             files = glob.glob('models/'+filename+'.*')
+            files.sort(key=alphanum_key)
+            print(files)
+
             with open('models/'+filename, "ab") as mainFile:
                 for partName in files:
                     with open(partName, "rb") as partFile:
@@ -39,6 +52,8 @@ def index(request):
 
 
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
+
+
 
 @csrf_exempt
 def architecture(request):
