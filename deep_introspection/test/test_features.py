@@ -27,4 +27,4 @@ def test_captures_disctinct_features():
 
     # Checks that all points are greater than the threshold
     for cluster in clusters:
-        assert(all(map(lambda x: abs(x) > 10/relevances.flatten().shape[0], cluster)))
+        assert(all(map(lambda x: abs(relevances[x]) >= 5/relevances.flatten().shape[0], cluster)))
