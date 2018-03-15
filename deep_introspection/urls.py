@@ -24,6 +24,7 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name="index.html")),
     path('uploadImage/', include('apps.uploadImage.urls')),
     path('uploadModel/', include('apps.uploadModel.urls')),
+    path('features/', include('apps.features.urls')),
     path('admin/', admin.site.urls),
 ]
 if settings.DEBUG is True:

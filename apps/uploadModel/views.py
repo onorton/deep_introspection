@@ -32,7 +32,8 @@ def index(request):
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     elif request.method == 'GET':
         if TestModel.objects.first() != None:
-            return HttpResponse("{\"model\": \"" + TestModel.objects.first().name + "\", \"message\": \"Model successfully retrieved.\"}")
+            model = TestModel.objects.first()
+            return HttpResponse("{\"model\": { \"name\": \"" + model.name + "\", \"id\":" + str(model.id) + "}, \"message\": \"Model successfully retrieved.\"}")
         else:
             return HttpResponse("{\"model\": null, \"message\": \"No model exists.\"}", status=404)
 

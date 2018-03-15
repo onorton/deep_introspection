@@ -72,6 +72,7 @@ webpack-stats.prod.json
 # development test files
 images/
 models/
+features/
 
 npm-debug.log*
 yarn-debug.log*
