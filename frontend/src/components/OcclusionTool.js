@@ -71,7 +71,6 @@ export default class OcclusionTool extends Component {
   }
   render(){
     const tool = this
-    console.log(this.state.predictions)
     return (
     <div className="toolArea">
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
@@ -86,12 +85,15 @@ export default class OcclusionTool extends Component {
     <div style={{position:'relative'}}>
     <img src={this.state.image} style={{width:'100%', borderStyle:"solid", borderColor:"#10161A", zIndex:0,position:'relative', top: 0, left: 0}}/>
     {(this.state.hover != null) ? <img src={'media/features/feature_model_'+ this.props.testModel.id + '_image_' + this.props.testImage.id + '_' + this.state.hover + '.png'} style={{width:'100%', zIndex:1, position:'absolute', top: 0, left: 0}}/> : <div/>}
-
     </div>
+
     <Predictions predictions={this.state.predictions}/>
     </div>
     <OcclusionResult
-      style={{width: 500, marginLeft:'auto',marginRight:'auto'}}
+      features={this.state.features.map(function(feature) {return feature.feature})}
+      testModel={this.props.testModel}
+      testImage={this.props.testImage}
+      style={{width: 750, marginLeft:'auto',marginRight:'auto'}}
       originalClass='Egyptian cat'
       lc={{features: [0,2,3], predictions: [{label: 'tabby cat', value: 0.5}]}}
       mi={{feature: 3, predictions: [{label: 'tabby cat', value: 0.5}]}}
