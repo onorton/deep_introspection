@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import OcclusionResult from './OcclusionResult'
+import Predictions from './Predictions'
 
 export default class OcclusionTool extends Component {
 
@@ -87,15 +88,11 @@ export default class OcclusionTool extends Component {
     {(this.state.hover != null) ? <img src={'media/features/feature_model_'+ this.props.testModel.id + '_image_' + this.props.testImage.id + '_' + this.state.hover + '.png'} style={{width:'100%', zIndex:1, position:'absolute', top: 0, left: 0}}/> : <div/>}
 
     </div>
-    <ul style={{listStyleType: 'none', height:100, padding: '0 20px 0 20px', position: 'relative'}}>
-    {
-      this.state.predictions.map(function(prediction, index) {
-        return(<li style={{width:'100%', backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 100*prediction.value+'%'}}>{prediction.label + ': ' + (100*prediction.value).toFixed(2) + '%'}</li>)
-      })
-    }
-    </ul>
+    <Predictions predictions={this.state.predictions}/>
     </div>
-    <OcclusionResult originalClass='Egyptian cat'
+    <OcclusionResult
+      style={{width: 500, marginLeft:'auto',marginRight:'auto'}}
+      originalClass='Egyptian cat'
       lc={{features: [0,2,3], predictions: [{label: 'tabby cat', value: 0.5}]}}
       mi={{feature: 3, predictions: [{label: 'tabby cat', value: 0.5}]}}
       mfRequired={{features: [0,2,8], predictions: [{label: 'tabby cat', value: 0.5}]}}
