@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import OcclusionResult from './OcclusionResult'
 
 export default class OcclusionTool extends Component {
 
@@ -94,6 +95,11 @@ export default class OcclusionTool extends Component {
     }
     </ul>
     </div>
+    <OcclusionResult originalClass='Egyptian cat'
+      lc={{features: [0,2,3], predictions: [{label: 'tabby cat', value: 0.5}]}}
+      mi={{feature: 3, predictions: [{label: 'tabby cat', value: 0.5}]}}
+      mfRequired={{features: [0,2,8], predictions: [{label: 'tabby cat', value: 0.5}]}}
+      mfPerturbation={{features: [1,2,4,5], predictions: [{label: 'tabby cat', value: 0.5}]}}/>
     </div>
     )
   }
