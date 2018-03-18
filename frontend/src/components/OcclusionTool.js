@@ -10,11 +10,16 @@ export default class OcclusionTool extends Component {
       features: [],
       predictions: [],
       image: null,
-      hover: null
+      hover: null,
+      results: {originalClass:'Egyptian cat',
+            lc:{features: [0,2,3], predictions: [{label: 'tabby cat', value: 0.5}]},
+            mi:{feature: 3, predictions: [{label: 'tabby cat', value: 0.5}]},
+            mfRequired:{features: [0,2,8], predictions: [{label: 'tabby cat', value: 0.5}]},
+            mfPerturbation:{features: [1,2,4,5], predictions: [{label: 'tabby cat', value: 0.5}]}}
     };
   }
   componentWillReceiveProps(nextProps) {
-    this.setState({image: nextProps.testImage.url, predictions: [], features: []})
+    this.setState({image: nextProps.testImage.url, predictions: [], features: [], occlusionResults: null})
     this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
   }
   componentDidMount() {
@@ -69,10 +74,36 @@ export default class OcclusionTool extends Component {
     console.log('There has been a problem with your fetch operation: ' + error.message);
   });
   }
+
+
+  analyse() {
+    const tool = this
+    fetch('http://127.0.0.1:8000/features/analyse/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
+      method: 'GET',
+      headers: {
+          "Content-Type": "application/json"
+      }
+    }).then(function(response) {
+
+      if (response.status == 200) {
+        response.json().then(function(data) {
+          tool.setState({results: data.results})
+        })
+      }
+  }).catch(function(error) {
+    console.log('There has been a problem with your fetch operation: ' + error.message);
+  });
+  }
+
+
+
   render(){
     const tool = this
     return (
     <div className="toolArea">
+    <div className="buttonArea" style={{width:'100%', height:40}}>
+    <label className="pt-button pt-active pt-intent-primary " onClick={() => {this.analyse()}}>Analyse</label>
+    </div>
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
     {this.state.features.map(function(feature, index) {
 
@@ -81,24 +112,22 @@ export default class OcclusionTool extends Component {
         return (feature.active) ? activeFeature : inactiveFeature
     })}
     </ul>
+
     <div className="results" style={{ float:"right", width: 400, marginRight:20, height:600}}>
     <div style={{position:'relative'}}>
     <img src={this.state.image} style={{width:'100%', borderStyle:"solid", borderColor:"#10161A", zIndex:0,position:'relative', top: 0, left: 0}}/>
     {(this.state.hover != null) ? <img src={'media/features/feature_model_'+ this.props.testModel.id + '_image_' + this.props.testImage.id + '_' + this.state.hover + '.png'} style={{width:'100%', zIndex:1, position:'absolute', top: 0, left: 0}}/> : <div/>}
     </div>
-
     <Predictions predictions={this.state.predictions}/>
     </div>
-    <OcclusionResult
+
+    {(this.state.results != null) ? <OcclusionResult
       features={this.state.features.map(function(feature) {return feature.feature})}
       testModel={this.props.testModel}
       testImage={this.props.testImage}
       style={{width: 750, marginLeft:'auto',marginRight:'auto'}}
-      originalClass='Egyptian cat'
-      lc={{features: [0,2,3], predictions: [{label: 'tabby cat', value: 0.5}]}}
-      mi={{feature: 3, predictions: [{label: 'tabby cat', value: 0.5}]}}
-      mfRequired={{features: [0,2,8], predictions: [{label: 'tabby cat', value: 0.5}]}}
-      mfPerturbation={{features: [1,2,4,5], predictions: [{label: 'tabby cat', value: 0.5}]}}/>
+      results={this.state.results}/>
+      : <div/>}
     </div>
     )
   }

@@ -59,7 +59,7 @@ def index(request, model, image):
     # Get number of features and return features
     with open(features_path) as f:
         num_features = sum(1 for _ in f)
-        return HttpResponse("{\"features\":" + json.dumps(list(range(num_features))) + ", \"message\": \"Features successfully retrieved.\"}")
+        return HttpResponse("{\"features\":" + json.dumps(list(range(num_features))) + ", \"message\": \"features successfully retrieved.\"}")
 
 @csrf_exempt
 def evaluate(request, model, image):
@@ -112,6 +112,23 @@ def evaluate(request, model, image):
     img.save(modification_path)
 
     return HttpResponse("{\"predictions\":" + json.dumps(top_predictions)+ ", \"image\": \""  + 'media/'+modification_path + "\"}")
+
+
+@csrf_exempt
+def analyse(request, model, image):
+
+
+    lc = {'features': [], 'predictions': []}
+    mi = {'feature': 0, 'predictions': []}
+    mfRequired = {'features': [], 'predictions': []}
+    mfPerturbation = {'features': [], 'predictions': []}
+    results = {'originalClass':'',
+            'lc': lc,
+            'mi': mi,
+            'mfRequired':mfRequired,
+            'mfPerturbation':mfPerturbation}
+    return HttpResponse("{\"results\":" + json.dumps(results) +"}")
+
 
 def get_label(image_label):
     image_label = image_label.split(',')[0].strip()
