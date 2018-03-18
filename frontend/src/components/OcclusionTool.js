@@ -11,19 +11,15 @@ export default class OcclusionTool extends Component {
       predictions: [],
       image: null,
       hover: null,
-      results: {originalClass:'Egyptian cat',
-            lc:{features: [0,2,3], predictions: [{label: 'tabby cat', value: 0.5}]},
-            mi:{feature: 3, predictions: [{label: 'tabby cat', value: 0.5}]},
-            mfRequired:{features: [0,2,8], predictions: [{label: 'tabby cat', value: 0.5}]},
-            mfPerturbation:{features: [1,2,4,5], predictions: [{label: 'tabby cat', value: 0.5}]}}
+      results: null
     };
   }
   componentWillReceiveProps(nextProps) {
-    this.setState({image: nextProps.testImage.url, predictions: [], features: [], occlusionResults: null})
+    this.setState({image: nextProps.testImage.url, predictions: [], features: [], results: null})
     this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
   }
   componentDidMount() {
-    this.setState({image: this.props.testImage.url, predictions: [], features:[]})
+    this.setState({image: this.props.testImage.url, predictions: [], features: [], results: null})
     this.fetchFeatures(this.props.testModel.id, this.props.testImage.id)
   }
 
