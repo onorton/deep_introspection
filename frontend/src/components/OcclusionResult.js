@@ -37,7 +37,7 @@ export default class OcclusionResult extends Component {
 
     <h5>Minimal Features Perturbation</h5>
     The minimal features that need to be occluded so {this.props.results.originalClass} is not predicted are {this.props.results.mfPerturbation.features + '.'}
-    <img src={this.occlusionsToUrl(difference(this.props.features,this.props.results.mfPerturbation.features))} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
+    <img src={this.occlusionsToUrl(this.props.results.mfPerturbation.features)} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.mfPerturbation.predictions}/>
     </div>
     )

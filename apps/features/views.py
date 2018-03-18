@@ -128,7 +128,6 @@ def evaluate(request, model, image):
 
 def increment_features(selection, max):
     incremented = False
-    print(max)
     while not incremented:
         for i in range(selection.shape[0]):
             if selection[i] < max:
@@ -214,7 +213,6 @@ def analyse(request, model, image):
             while True:
                 if np.array_equal(selection, (num_clusters-1)*np.ones(num)):
                     break
-                print(selection)
                 inactive_indices = list(set(range(num_clusters)) - set(selection))
                 inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
                 inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
@@ -236,14 +234,44 @@ def analyse(request, model, image):
     mfRequired = {'features': selection.tolist(), 'predictions': top_predictions}
 
     # Find minimal to change
+    selection = []
+    features_found = False
+    for num in range(num_clusters):
+        selection = np.zeros(num).astype(int)
 
-    mfPerturbation = {'features': [], 'predictions': []}
+        # Increment so each feature is unique
+        if num > 1:
+            selection = increment_features(selection, num_clusters)
+
+        while True:
+            if np.array_equal(selection, (num_clusters-1)*np.ones(num)):
+                break
+            inactive_indices = list(selection)
+            inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
+            inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+
+            predictions, img =  predictions_from_features(net, img_path, inactive_features)
+            top_predictions = get_top_predictions(predictions, 5, labels)
+
+            if top_predictions[0]['index'] != predicted['index']:
+                img = Image.fromarray(np.uint8(img))
+                modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + '_'.join(str(f) for f in inactive_indices) + '.jpg'
+                img.save(modification_path)
+                features_found = True
+                break
+
+            selection = increment_features(selection, num_clusters)
+        if features_found:
+            break
+
+    mfPerturbation = {'features': selection.tolist(), 'predictions': top_predictions}
 
     results = {'originalClass':predicted['label'],
             'lc': lc,
             'mi': mi,
             'mfRequired':mfRequired,
             'mfPerturbation':mfPerturbation}
+
     return HttpResponse("{\"results\":" + json.dumps(results) +"}")
 
 
