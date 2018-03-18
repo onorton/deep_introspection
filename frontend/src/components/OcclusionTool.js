@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import OcclusionResult from './OcclusionResult'
 import Predictions from './Predictions'
-
+import { Tooltip, Position } from  "@blueprintjs/core";
 export default class OcclusionTool extends Component {
 
   constructor(props) {
@@ -98,7 +98,9 @@ export default class OcclusionTool extends Component {
     return (
     <div className="toolArea">
     <div className="buttonArea" style={{width:'100%', height:40}}>
-    <label className="pt-button pt-active pt-intent-primary " onClick={() => {this.analyse()}}>Analyse</label>
+    <Tooltip style={{width:200}} content="Analyses model and image with various metrics. May take several minutes." position={Position.TOP}>
+      <label className="pt-button pt-active pt-intent-primary " onClick={() => {this.analyse()}}>Analyse</label>
+    </Tooltip>
     </div>
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
     {this.state.features.map(function(feature, index) {
