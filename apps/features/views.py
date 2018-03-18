@@ -126,12 +126,30 @@ def evaluate(request, model, image):
     img.save(modification_path)
     return HttpResponse("{\"predictions\":" + json.dumps(top_predictions)+ ", \"image\": \""  + 'media/'+modification_path + "\"}")
 
+def increment_features(selection, max):
+    incremented = False
+    print(max)
+    while not incremented:
+        for i in range(selection.shape[0]):
+            if selection[i] < max:
+                selection[i]+=1
+                unique_elems = set(selection)
+
+                if len(unique_elems) == len(selection):
+                    incremented = True
+                    break
+            else:
+                # reset
+                selection[i] = 0
+    return selection
+
 
 @csrf_exempt
 def analyse(request, model, image):
 
     features_path = 'features/model_'+ str(model) + '_image_' + str(image) + '.dat'
     clusters = read_clusters(features_path)
+    num_clusters = len(clusters)
 
     img_path = TestImage.objects.filter(id=image).first().image
     test_model = TestModel.objects.filter(id=model).first()
@@ -153,7 +171,7 @@ def analyse(request, model, image):
     # Find most important feature
     biggest_feature = 0
     biggest_change = 0
-    for i in range(len(clusters)):
+    for i in range(num_clusters):
         cluster = clusters[i]
         inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster)))
         predictions, _ =  predictions_from_features(net, img_path, inactive_features)
@@ -172,8 +190,50 @@ def analyse(request, model, image):
     mi = {'feature': biggest_feature, 'predictions': top_predictions}
 
     # Find minimal features required
+    selection = []
+    features_found = False
+    for num in range(num_clusters):
+        if num == 0:
+            inactive_features = list(itertools.chain.from_iterable(clusters))
+            inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+            predictions, img =  predictions_from_features(net, img_path, inactive_features)
+            top_predictions = get_top_predictions(predictions, 5, labels)
+            # No features are required
+            if top_predictions[0]['index'] == predicted['index']:
+                minimal_features_required = []
+                modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + '_'.join(str(f) for f in range(num_clusters)) + '.jpg'
+                img.save(modification_path)
 
-    mfRequired = {'features': [], 'predictions': []}
+        else:
+            selection = np.zeros(num).astype(int)
+
+            # Increment so each feature is unique
+            if num > 1:
+                selection = increment_features(selection, num_clusters)
+
+            while True:
+                if np.array_equal(selection, (num_clusters-1)*np.ones(num)):
+                    break
+                print(selection)
+                inactive_indices = list(set(range(num_clusters)) - set(selection))
+                inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
+                inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+
+                predictions, img =  predictions_from_features(net, img_path, inactive_features)
+                top_predictions = get_top_predictions(predictions, 5, labels)
+
+                if top_predictions[0]['index'] == predicted['index']:
+                    img = Image.fromarray(np.uint8(img))
+                    modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + '_'.join(str(f) for f in inactive_indices) + '.jpg'
+                    img.save(modification_path)
+                    features_found = True
+                    break
+
+                selection = increment_features(selection, num_clusters)
+        if features_found:
+            break
+
+    mfRequired = {'features': selection.tolist(), 'predictions': top_predictions}
 
     # Find minimal to change
 
