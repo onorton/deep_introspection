@@ -21,6 +21,8 @@ import itertools
 
 import matplotlib.pyplot as plt
 
+import math
+
 from PIL import Image
 
 def get_top_predictions(predictions, num, labels):
@@ -126,23 +128,6 @@ def evaluate(request, model, image):
     img.save(modification_path)
     return HttpResponse("{\"predictions\":" + json.dumps(top_predictions)+ ", \"image\": \""  + 'media/'+modification_path + "\"}")
 
-def increment_features(selection, max):
-    incremented = False
-    while not incremented:
-        for i in range(selection.shape[0]):
-            if selection[i] < max:
-                selection[i]+=1
-                unique_elems = set(selection)
-
-                if len(unique_elems) == len(selection):
-                    incremented = True
-                    break
-            else:
-                # reset
-                selection[i] = 0
-    return selection
-
-
 @csrf_exempt
 def analyse(request, model, image):
 
@@ -199,20 +184,13 @@ def analyse(request, model, image):
             top_predictions = get_top_predictions(predictions, 5, labels)
             # No features are required
             if top_predictions[0]['index'] == predicted['index']:
-                minimal_features_required = []
+                img = Image.fromarray(np.uint8(img))
                 modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + '_'.join(str(f) for f in range(num_clusters)) + '.jpg'
                 img.save(modification_path)
-
+                features_found = True
         else:
-            selection = np.zeros(num).astype(int)
-
-            # Increment so each feature is unique
-            if num > 1:
-                selection = increment_features(selection, num_clusters)
-
-            while True:
-                if np.array_equal(selection, (num_clusters-1)*np.ones(num)):
-                    break
+            combinations = itertools.combinations(range(num_clusters), num)
+            for selection in combinations:
                 inactive_indices = list(set(range(num_clusters)) - set(selection))
                 inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
                 inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
@@ -226,33 +204,28 @@ def analyse(request, model, image):
                     img.save(modification_path)
                     features_found = True
                     break
-
-                selection = increment_features(selection, num_clusters)
         if features_found:
             break
 
-    mfRequired = {'features': selection.tolist(), 'predictions': top_predictions}
+    mfRequired = {'features': selection, 'predictions': top_predictions}
+
+
 
     # Find minimal to change
     selection = []
     features_found = False
     for num in range(num_clusters):
-        selection = np.zeros(num).astype(int)
+        if num == 0:
+            continue
 
-        # Increment so each feature is unique
-        if num > 1:
-            selection = increment_features(selection, num_clusters)
-
-        while True:
-            if np.array_equal(selection, (num_clusters-1)*np.ones(num)):
-                break
+        combinations = itertools.combinations(range(num_clusters), num)
+        for selection in combinations:
             inactive_indices = list(selection)
             inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
             inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
 
             predictions, img =  predictions_from_features(net, img_path, inactive_features)
             top_predictions = get_top_predictions(predictions, 5, labels)
-
             if top_predictions[0]['index'] != predicted['index']:
                 img = Image.fromarray(np.uint8(img))
                 modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + '_'.join(str(f) for f in inactive_indices) + '.jpg'
@@ -260,11 +233,10 @@ def analyse(request, model, image):
                 features_found = True
                 break
 
-            selection = increment_features(selection, num_clusters)
         if features_found:
             break
 
-    mfPerturbation = {'features': selection.tolist(), 'predictions': top_predictions}
+    mfPerturbation = {'features': selection, 'predictions': top_predictions}
 
     results = {'originalClass':predicted['label'],
             'lc': lc,
