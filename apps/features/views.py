@@ -149,8 +149,30 @@ def analyse(request, model, image):
     predicted = basic_predictions[0]
 
     # Find features for largest change
+    largest_change = 0
+    features = []
+    for i in range(2**num_clusters):
+        b = [i >> j & 1 for j in range(i.bit_length()-1,-1,-1)]
+        b = [0] * (num_clusters-len(b)) + b
+        inactive_indices = list(itertools.compress(range(num_clusters), b))
+        inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
+        inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
 
-    lc = {'features': [], 'predictions': []}
+        predictions, img =  predictions_from_features(net, img_path, inactive_features)
+        change = predicted['value'] - predictions[predicted['index']]
+        if change > largest_change:
+            largest_change = change
+            features = inactive_indices
+
+    inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
+    inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+    predictions, img =  predictions_from_features(net, img_path, inactive_features)
+
+    img = Image.fromarray(np.uint8(img))
+    modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + '_'.join(str(f) for f in inactive_indices) + '.jpg'
+    img.save(modification_path)
+    top_predictions = get_top_predictions(predictions, 5, labels)
+    lc = {'features': inactive_features, 'predictions': top_predictions}
 
     # Find most important feature
     biggest_feature = 0
