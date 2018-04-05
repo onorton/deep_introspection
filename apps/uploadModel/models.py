@@ -5,3 +5,4 @@ class TestModel(models.Model):
     architecture = models.FileField(upload_to='models')
     weights = models.FileField(upload_to='models')
     labels = models.FileField(upload_to='models')
+    user = models.IntegerField(default=0)

@@ -33,7 +33,7 @@ class App extends Component {
           <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
         </header>
         <LoginOverlay isOpen={this.state.user == null} callbackParent={(user) => this.setState({user:user})}/>
-        <UploadModelOverlay callbackParent={(model) => this.onTestModelChanged(model)}/>
+        {this.state.user != null ? <UploadModelOverlay callbackParent={(model) => this.onTestModelChanged(model)}/> : <div/>}
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 110, width:"100%" }}>
           {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
         </div>
