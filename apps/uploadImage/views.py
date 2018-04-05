@@ -8,9 +8,12 @@ from apps.uploadImage.models import TestImage
 
 @csrf_exempt
 def index(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
-        name = body['name']
+        name = str(id)+'_'+body['name']
         up = urllib.parse.urlparse(body['image'])
         head, data = up.path.split(',', 1)
         bits = head.split(';')
@@ -24,8 +27,8 @@ def index(request):
 
         # Hash the data to see if image already exists
         imgHash = hashlib.md5(data.encode('utf-8')).digest()
-        if TestImage.objects.filter(hash=imgHash).count() == 0:
-            img = TestImage(hash=imgHash, image='images/'+name)
+        if TestImage.objects.filter(hash=imgHash, user=id).count() == 0:
+            img = TestImage(hash=imgHash, image='images/'+name, user=id)
             img.save()
             with open('images/'+name, "wb") as f:
                 f.write(base64.b64decode(data))
@@ -33,6 +36,6 @@ def index(request):
         else:
             return HttpResponse("{}",status=409)
     elif request.method == 'GET':
-        images = list(map(lambda item: {'id': item.id, 'url': item.image.url}, list(TestImage.objects.all())))
+        images = list(map(lambda item: {'id': item.id, 'url': item.image.url}, list(TestImage.objects.filter(user=id))))
         return HttpResponse("{\"images\":"+ json.dumps(images) + "}")
     return HttpResponse("{message: \"Invalid method.\"}", status=405)

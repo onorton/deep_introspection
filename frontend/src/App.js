@@ -27,7 +27,6 @@ class App extends Component {
     this.setState({testImage:img})
   }
   render() {
-    console.log(this.state.user)
     return (
       <div className="App">
         <header className="App-header">
@@ -38,7 +37,7 @@ class App extends Component {
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 110, width:"100%" }}>
           {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
         </div>
-        <ImageCollection callbackParent={(img) => this.onTestImageChanged(img)} style={{width:250, height:750}}/>
+        <ImageCollection user={this.state.user} callbackParent={(img) => this.onTestImageChanged(img)} style={{width:250, height:750}}/>
       </div>
     );
   }

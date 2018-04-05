@@ -22,11 +22,13 @@ export default class LoginOverlay extends Component {
       body: JSON.stringify({username: this.state.username, password: this.state.password}),
       headers: {
           "Content-Type": "application/json"
-      }
+      },
+      credentials: "same-origin",
     }).then(function(response) {
 
       if (response.status == 200) {
         response.json().then(function(data) {
+          console.log(data)
           loginOverlay.props.callbackParent(data.user)
           MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Login Successful." });
           loginOverlay.setState({isOpen:false});
@@ -47,7 +49,9 @@ export default class LoginOverlay extends Component {
       body: JSON.stringify({username: this.state.username, password: this.state.password}),
       headers: {
           "Content-Type": "application/json"
-      }
+      },
+      credentials: "same-origin",
+
     }).then(function(response) {
 
       if (response.status == 200) {
