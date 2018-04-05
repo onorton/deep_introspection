@@ -20,8 +20,10 @@ def index(request):
 
 @csrf_exempt
 def login_user(request):
-
     if request.method == 'POST':
+        if request.user.is_authenticated:
+            return HttpResponse("{\"user\": " + str(request.user.id) + "}")
+
         body = json.loads(request.body.decode("utf-8"))
         username = body['username']
         password = body['password']

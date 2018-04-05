@@ -11,9 +11,36 @@ export default class LoginOverlay extends Component {
     this.state = {
       username: '',
       password: '',
-      isOpen: this.props.isOpen
+      isOpen: false
     };
   }
+
+  componentWillMount() {
+    const loginOverlay = this
+    fetch('http://127.0.0.1:8000/accounts/login', {
+      method: 'POST',
+      body: JSON.stringify({username: this.state.username, password: this.state.password}),
+      headers: {
+          "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+    }).then(function(response) {
+
+      if (response.status == 200) {
+        response.json().then(function(data) {
+          loginOverlay.props.callbackParent(data.user)
+          loginOverlay.setState({isOpen:false});
+        })
+      } else {
+        loginOverlay.setState({isOpen:true});
+
+      }
+
+    }).catch(function(error) {
+      console.log('There has been a problem with your fetch operation: ' + error.message);
+    });
+  }
+
 
   login() {
     const loginOverlay = this
@@ -28,7 +55,6 @@ export default class LoginOverlay extends Component {
 
       if (response.status == 200) {
         response.json().then(function(data) {
-          console.log(data)
           loginOverlay.props.callbackParent(data.user)
           MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Login Successful." });
           loginOverlay.setState({isOpen:false});
