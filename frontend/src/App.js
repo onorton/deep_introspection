@@ -5,6 +5,8 @@ import styles from '../node_modules/@blueprintjs/core/dist/blueprint.css';
 
 import ImageCollection from './components/ImageCollection'
 import UploadModelOverlay from './components/UploadModelOverlay'
+import LoginOverlay from './components/LoginOverlay'
+
 import ToolCollection from './components/ToolCollection'
 
 class App extends Component {
@@ -12,7 +14,8 @@ class App extends Component {
     super(props);
     this.state = {
       testImage: null,
-      testModel: null
+      testModel: null,
+      user: null
     };
   }
 
@@ -24,11 +27,13 @@ class App extends Component {
     this.setState({testImage:img})
   }
   render() {
+    console.log(this.state.user)
     return (
       <div className="App">
         <header className="App-header">
           <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
         </header>
+        <LoginOverlay isOpen={this.state.user == null} callbackParent={(user) => this.setState({user:user})}/>
         <UploadModelOverlay callbackParent={(model) => this.onTestModelChanged(model)}/>
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 110, width:"100%" }}>
           {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
