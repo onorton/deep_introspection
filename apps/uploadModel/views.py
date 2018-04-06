@@ -26,33 +26,35 @@ def index(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
-        filename = body['filename']
+        filename =  str(id) + '_' + name + '_weights.caffemodel'
         if body['blobNum'] == -1:
             # Combine all parts of the file together
             files = glob.glob('models/'+filename+'.*')
-            filename = str(id) + '_' + filename
             files.sort(key=alphanum_key)
 
             with open('models/'+filename, "ab") as mainFile:
                 for partName in files:
                     with open(partName, "rb") as partFile:
                         mainFile.write(partFile.read())
+
             # Clean up parts
             for partName in files:
                 os.remove(partName)
+
             # Add weights file to model
             model = TestModel.objects.filter(name=name, user=id).first()
             model.weights = 'models/'+filename
             model.save()
-            return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Model successfully uploaded.\"}")
+            return HttpResponse("{\"name\": \"" + name + "\", \"id\": " + str(model.id) + ",\"message\": \"Model successfully uploaded.\"}")
         save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     elif request.method == 'GET':
-        if TestModel.objects.first() != None:
-            model = TestModel.objects.filter(user=id).first()
-            return HttpResponse("{\"model\": { \"name\": \"" + model.name + "\", \"id\":" + str(model.id) + "}, \"message\": \"Model successfully retrieved.\"}")
+        if TestModel.objects.filter(user=id).first() != None:
+            models = TestModel.objects.filter(user=id)
+            models = json.dumps(list(map(lambda model: {"name": model.name, "id" : model.id}, models)))
+            return HttpResponse("{\"models\": " + models + ", \"message\": \"Model successfully retrieved.\"}")
         else:
-            return HttpResponse("{\"model\": null, \"message\": \"No model exists.\"}", status=404)
+            return HttpResponse("{\"models\": null, \"message\": \"No model exists.\"}", status=404)
 
 
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
@@ -67,9 +69,8 @@ def architecture(request):
 
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
-        filename = body['filename']
-        filename = str(id) + '_' + filename
         name = body['name']
+        filename = str(id) + '_' + name + '_architecture.prototxt'
         # Check if model already exists
         if TestModel.objects.filter(name=name, user=id).count() != 0:
             return HttpResponse("{}",status=409)
@@ -87,9 +88,8 @@ def labels(request):
     id = request.user.id
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
-        filename = body['filename']
-        filename = str(id) + '_' + filename
         name = body['name']
+        filename = str(id) + '_' + name + '_labels.txt'
         save_file('models/'+filename, body['file'])
         model = TestModel.objects.filter(name=name, user=id).first()
         model.labels = 'models/'+filename
