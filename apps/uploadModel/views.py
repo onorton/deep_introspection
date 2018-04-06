@@ -44,7 +44,7 @@ def index(request):
             model = TestModel.objects.filter(name=name, user=id).first()
             model.weights = 'models/'+filename
             model.save()
-            return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Model successfully uploaded.\"}")
+            return HttpResponse("{\"name\": \"" + name + "\", \"id\": " + str(model.id) + ",\"message\": \"Model successfully uploaded.\"}")
         save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     elif request.method == 'GET':
