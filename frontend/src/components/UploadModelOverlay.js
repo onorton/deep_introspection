@@ -9,7 +9,7 @@ export default class UploadModelOverlay extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isOpen: false,
+      isOpen: true,
       validArchitecture: true,
       architecture: null,
       validModel: true,
@@ -18,29 +18,6 @@ export default class UploadModelOverlay extends Component {
       labels: null,
       percentage: null
     };
-  }
-
-  componentWillMount() {
-    const collection = this
-    // Fetch first available model
-    fetch('http://127.0.0.1:8000/uploadModel/', {
-      method: 'GET',
-      headers: {
-          "Content-Type": "application/json"
-      },
-      credentials: 'same-origin'
-    }).then(function(response) {
-      if (response.status == 200) {
-        response.json().then(function(data) {
-          collection.props.callbackParent(data.models[0])
-        })
-      } else if (response.status == 404) {
-        collection.setState({isOpen: true})
-      }
-
-    }).catch(function(error) {
-      console.log('There has been a problem with your fetch operation: ' + error.message);
-    });
   }
 
   isValidFile(filename, type) {
@@ -105,6 +82,9 @@ export default class UploadModelOverlay extends Component {
             if (response.status == 200) {
               MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
               overlay.setState({isOpen:false});
+              response.json().then(function(data) {
+                overlay.props.callbackParent({name: modelName, id: data.id})
+              })
             }
           }).catch(function(error) {
             console.log('Problem assembling file: ' + error.message);
@@ -191,17 +171,16 @@ export default class UploadModelOverlay extends Component {
   }
 
   render(){
-    console.log(this.state.isOpen)
     return (
           <Dialog isOpen={this.state.isOpen} title="Add Model"
             onClose={() => this.setState({isOpen:false})}
             style={{backgroundColor:"#F5F8FA"}}
-            canEscapeClose={false}
-            canOutsideClickClose={false}
-            isCloseButtonShown={false}>
+            canEscapeClose={this.state.percentage == null}
+            canOutsideClickClose={this.state.percentage == null}
+            isCloseButtonShown={this.state.percentage == null}>
 
               <div className="pt-dialog-body">
-              <p>Before using Deep Introspection, you need to upload a caffe model to analyse.</p>
+              {(this.props.first) ? <p>Before using Deep Introspection, you need to upload a network model to analyse.</p> : <div/>}
               <label class="pt-label">
               <h5>Architecture File</h5>
               <p>This is the *.prototxt file that defines the architecture of the network.</p>

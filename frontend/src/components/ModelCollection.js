@@ -4,7 +4,7 @@ import Cookies from 'js-cookie';
 import { Position, Toaster, Intent } from "@blueprintjs/core";
 import {MainToaster} from '../MainToaster'
 
-import UploadModelOverlay2 from './UploadModelOverlay2'
+import UploadModelOverlay from './UploadModelOverlay'
 
 export default class ModelCollection extends Component {
 
@@ -68,7 +68,7 @@ export default class ModelCollection extends Component {
 
     return (
       <div>
-      {(this.state.add) ? <UploadModelOverlay2 callbackParent={(model) => this.onModelUploaded(model)}/> : <div/>}
+      {(this.props.user != null && (this.state.add || this.state.models.length == 0)) ? <UploadModelOverlay first={this.state.models.length == 0} callbackParent={(model) => this.onModelUploaded(model)}/> : <div/>}
       <div style={this.props.style}>
         <div style={{backgroundColor: '#BFCCD6'}}>
         <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59'}}>
