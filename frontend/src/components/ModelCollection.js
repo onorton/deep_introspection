@@ -76,9 +76,9 @@ export default class ModelCollection extends Component {
       <UploadModelOverlay isOpen={this.props.user != null && this.state.add} first={this.state.models.length == 0} callbackParent={(model) => this.onModelUploaded(model)}/>
       <div style={this.props.style}>
         <div style={{backgroundColor: '#BFCCD6'}}>
-        <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59'}}>
-        <h2 style={{color:'#FFFFFF', paddingBottom:'5px'}}>Test Models</h2>
-        <label style={{width: '115px'}} className="pt-file-upload pt-button pt-icon-add " onClick={() => collection.setState({add: true})}>Add Model</label>
+        <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59', height:40, padding:5}}>
+        <span style={{color:'#FFFFFF', fontSize:'15pt'}}>Test Models</span>
+        <span style={{marginLeft:10, cursor:'pointer'}} className="pt-interactive pt-icon-add pt-icon-large" onClick={() => collection.setState({add: true})}></span>
         </div>
         {this.state.models.length == 0 ? (
 
@@ -91,11 +91,11 @@ export default class ModelCollection extends Component {
           Add a new model to get started.
           </div>
         </div>) : <div></div>}
-        <Scrollbars style={this.props.style}>
-          <ul style={{listStyleType: 'none', padding: 0, margin: 0}}>
+        <Scrollbars style={{width: this.props.style.width, height:this.props.style.height}}>
+          <ul style={{listStyleType: 'none', padding: 0, position:'relative'}}>
            {
              this.state.models.map(function(model, index){
-           return <li style={{padding: '5px 0px 5px 0px'}}><label onClick={() => collection.select(index)} style={(index == selected) ? selectedStyle : modelStyle} className="pt-file-upload pt-button">{model.name}</label></li>;
+           return <li style={{padding: '5px 0px 5px 0px'}}><label onClick={() => collection.select(index)} style={(index == selected) ? selectedStyle : modelStyle} className="pt-button">{model.name}</label></li>;
                    })}
            </ul>
         </Scrollbars>

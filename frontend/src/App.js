@@ -55,11 +55,11 @@ class App extends Component {
           <label style={{float:'right'}}className="pt-file-upload pt-button pt-icon-log-out pt-intent-primary " onClick={() => {this.logout()}}>Logout</label>
         </header>
         <LoginOverlay isOpen={this.state.user == null}callbackParent={(user) => this.setState({user:user})}/>
-        <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 110, width:"100%" }}>
+        <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 140, width:"100%" }}>
           {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
         </div>
         <ImageCollection user={this.state.user} callbackParent={(img) => this.onTestImageChanged(img)} style={{width:250, height:750}}/>
-        <ModelCollection user={this.state.user} callbackParent={(model) => this.onTestModelChanged(model)} style={{width:200, height:200}}/>
+      <ModelCollection user={this.state.user} callbackParent={(model) => this.onTestModelChanged(model)} style={{position:'absolute', top:80, left:250, width:200, height:100}}/>
 
       </div>
     );
