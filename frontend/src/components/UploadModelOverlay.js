@@ -9,7 +9,7 @@ export default class UploadModelOverlay extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isOpen: true,
+      isOpen: props.isOpen,
       validArchitecture: true,
       architecture: null,
       validModel: true,
@@ -19,6 +19,11 @@ export default class UploadModelOverlay extends Component {
       percentage: null
     };
   }
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({isOpen:nextProps.isOpen})
+  }
+
 
   isValidFile(filename, type) {
     var parts = filename.split('.');
@@ -81,10 +86,11 @@ export default class UploadModelOverlay extends Component {
           }).then(function(response){
             if (response.status == 200) {
               MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
-              overlay.setState({isOpen:false});
               response.json().then(function(data) {
                 overlay.props.callbackParent({name: modelName, id: data.id})
+                overlay.reset()
               })
+
             }
           }).catch(function(error) {
             console.log('Problem assembling file: ' + error.message);
@@ -170,14 +176,32 @@ export default class UploadModelOverlay extends Component {
     };
   }
 
+  reset() {
+    const initialState = {
+      isOpen: false,
+      validArchitecture: true,
+      architecture: null,
+      validModel: true,
+      model: null,
+      validLabels: true,
+      labels: null,
+      percentage: null
+    };
+    this.setState(initialState)
+  }
+
   render(){
+
+
     return (
           <Dialog isOpen={this.state.isOpen} title="Add Model"
-            onClose={() => this.setState({isOpen:false})}
             style={{backgroundColor:"#F5F8FA"}}
             canEscapeClose={this.state.percentage == null}
             canOutsideClickClose={this.state.percentage == null}
-            isCloseButtonShown={this.state.percentage == null}>
+            isCloseButtonShown={this.state.percentage == null}
+            onClose={evt => this.reset()}
+            >
+
 
               <div className="pt-dialog-body">
               {(this.props.first) ? <p>Before using Deep Introspection, you need to upload a network model to analyse.</p> : <div/>}

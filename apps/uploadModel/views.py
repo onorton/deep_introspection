@@ -36,7 +36,7 @@ def index(request):
                 for partName in files:
                     with open(partName, "rb") as partFile:
                         mainFile.write(partFile.read())
-                        
+
             # Clean up parts
             for partName in files:
                 os.remove(partName)
@@ -49,7 +49,7 @@ def index(request):
         save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     elif request.method == 'GET':
-        if TestModel.objects.first() != None:
+        if TestModel.objects.filter(user=id).first() != None:
             models = TestModel.objects.filter(user=id)
             models = json.dumps(list(map(lambda model: {"name": model.name, "id" : model.id}, models)))
             return HttpResponse("{\"models\": " + models + ", \"message\": \"Model successfully retrieved.\"}")

@@ -41,6 +41,8 @@ export default class ModelCollection extends Component {
           collection.setState({models: data.models})
           collection.props.callbackParent(data.models[0])
         })
+      } else if (response.status == 404) {
+        collection.setState({add:true})
       }
     }).catch(function(error) {
       console.log('There has been a problem with your fetch operation: ' + error.message);
@@ -55,9 +57,13 @@ export default class ModelCollection extends Component {
 
   onModelUploaded(model) {
     const models = this.state.models
-    models.push(model)
+    if (models.length == 0) {
+      this.props.callbackParent(model)
+    }
 
+    models.push(model)
     this.setState({models: models, add:false})
+
   }
 
   render(){
@@ -65,10 +71,9 @@ export default class ModelCollection extends Component {
     let selected = this.state.selected;
     let selectedStyle = { outlineColor: '#137CBD', outlineStyle: 'solid',  width: '90%'}
     let modelStyle = {width: '90%'}
-
     return (
       <div>
-      {(this.props.user != null && (this.state.add || this.state.models.length == 0)) ? <UploadModelOverlay first={this.state.models.length == 0} callbackParent={(model) => this.onModelUploaded(model)}/> : <div/>}
+      <UploadModelOverlay isOpen={this.props.user != null && this.state.add} first={this.state.models.length == 0} callbackParent={(model) => this.onModelUploaded(model)}/>
       <div style={this.props.style}>
         <div style={{backgroundColor: '#BFCCD6'}}>
         <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59'}}>
