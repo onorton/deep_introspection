@@ -15,8 +15,12 @@ export default class ImageCollection extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.user != null && this.props.user == null) {
+    if (this.props.user == null && nextProps.user != null) {
       this.fetchImages(nextProps.user)
+    }
+
+    if (nextProps.user == null) {
+      this.setState({images: [], selected: 0})
     }
   }
 
@@ -33,10 +37,8 @@ export default class ImageCollection extends Component {
         response.json().then(function(data) {
           collection.setState({images: data.images})
           collection.props.callbackParent(data.images[0])
-
         })
       }
-
     }).catch(function(error) {
       console.log('There has been a problem with your fetch operation: ' + error.message);
     });

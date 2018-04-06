@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 @csrf_exempt
@@ -33,3 +33,8 @@ def login_user(request):
             return HttpResponse("{\"user\": " + str(user.id) + "}")
         else:
             return HttpResponse("{}", status=400)
+
+@csrf_exempt
+def logout_user(request):
+    logout(request)
+    return HttpResponse("{}")

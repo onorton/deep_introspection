@@ -11,11 +11,16 @@ export default class LoginOverlay extends Component {
     this.state = {
       username: '',
       password: '',
-      isOpen: false
+      isOpen: props.isOpen
     };
   }
 
+  componentWillReceiveProps(nextProps) {
+    this.setState({isOpen:nextProps.isOpen})
+  }
+
   componentWillMount() {
+    console.log("sup")
     const loginOverlay = this
     fetch('http://127.0.0.1:8000/accounts/login', {
       method: 'POST',
@@ -31,9 +36,6 @@ export default class LoginOverlay extends Component {
           loginOverlay.props.callbackParent(data.user)
           loginOverlay.setState({isOpen:false});
         })
-      } else {
-        loginOverlay.setState({isOpen:true});
-
       }
 
     }).catch(function(error) {
@@ -120,7 +122,7 @@ export default class LoginOverlay extends Component {
                   useVendorStyles={false}
                  onChange={evt => this.setState({password:evt.target.value})}
                 />
-               <label style={{marginTop: 10}} className="pt-button pt-active pt-intent-primary " onClick={() => {this.login()}}>Login</label>
+               <label style={{marginTop: 10}} className="pt-button pt-active pt-intent-primary pt-icon-log-in" onClick={() => {this.login()}}>Login</label>
               </div>}/>
              <Tab2 id="sign" title={<h5>Sign Up</h5>} panel={
                <div>
@@ -135,7 +137,7 @@ export default class LoginOverlay extends Component {
                   useVendorStyles={false}
                  onChange={evt => this.setState({password:evt.target.value})}
                 />
-               <label style={{marginTop: 10}} className="pt-button pt-active pt-intent-primary " onClick={() => {this.signup()}}>Sign Up</label>
+               <label style={{marginTop: 10}} className="pt-button pt-active pt-intent-primary" onClick={() => {this.signup()}}>Sign Up</label>
               </div>}/>
              <Tabs2/>
           </Tabs2>
