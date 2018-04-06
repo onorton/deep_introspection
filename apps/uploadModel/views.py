@@ -26,20 +26,21 @@ def index(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
-        filename = body['filename']
+        filename =  str(id) + '_' + name + '_weights.caffemodel'
         if body['blobNum'] == -1:
             # Combine all parts of the file together
             files = glob.glob('models/'+filename+'.*')
-            filename = str(id) + '_' + filename
             files.sort(key=alphanum_key)
 
             with open('models/'+filename, "ab") as mainFile:
                 for partName in files:
                     with open(partName, "rb") as partFile:
                         mainFile.write(partFile.read())
+                        
             # Clean up parts
             for partName in files:
                 os.remove(partName)
+
             # Add weights file to model
             model = TestModel.objects.filter(name=name, user=id).first()
             model.weights = 'models/'+filename
@@ -68,9 +69,8 @@ def architecture(request):
 
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
-        filename = body['filename']
-        filename = str(id) + '_' + filename
         name = body['name']
+        filename = str(id) + '_' + name + '_architecture.prototxt'
         # Check if model already exists
         if TestModel.objects.filter(name=name, user=id).count() != 0:
             return HttpResponse("{}",status=409)
@@ -88,9 +88,8 @@ def labels(request):
     id = request.user.id
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
-        filename = body['filename']
-        filename = str(id) + '_' + filename
         name = body['name']
+        filename = str(id) + '_' + name + '_labels.txt'
         save_file('models/'+filename, body['file'])
         model = TestModel.objects.filter(name=name, user=id).first()
         model.labels = 'models/'+filename
