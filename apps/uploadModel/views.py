@@ -19,6 +19,10 @@ def alphanum_key(s):
 
 @csrf_exempt
 def index(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
@@ -26,8 +30,8 @@ def index(request):
         if body['blobNum'] == -1:
             # Combine all parts of the file together
             files = glob.glob('models/'+filename+'.*')
+            filename = str(id) + '_' + filename
             files.sort(key=alphanum_key)
-            print(files)
 
             with open('models/'+filename, "ab") as mainFile:
                 for partName in files:
@@ -37,7 +41,7 @@ def index(request):
             for partName in files:
                 os.remove(partName)
             # Add weights file to model
-            model = TestModel.objects.filter(name=name).first()
+            model = TestModel.objects.filter(name=name, user=id).first()
             model.weights = 'models/'+filename
             model.save()
             return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Model successfully uploaded.\"}")
@@ -45,7 +49,7 @@ def index(request):
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     elif request.method == 'GET':
         if TestModel.objects.first() != None:
-            model = TestModel.objects.first()
+            model = TestModel.objects.filter(user=id).first()
             return HttpResponse("{\"model\": { \"name\": \"" + model.name + "\", \"id\":" + str(model.id) + "}, \"message\": \"Model successfully retrieved.\"}")
         else:
             return HttpResponse("{\"model\": null, \"message\": \"No model exists.\"}", status=404)
@@ -57,28 +61,37 @@ def index(request):
 
 @csrf_exempt
 def architecture(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         filename = body['filename']
+        filename = str(id) + '_' + filename
         name = body['name']
         # Check if model already exists
-        if TestModel.objects.filter(name=name).count() != 0:
+        if TestModel.objects.filter(name=name, user=id).count() != 0:
             return HttpResponse("{}",status=409)
 
         save_file('models/'+filename, body['file'])
-        model = TestModel(name=name, architecture='models/'+filename)
+        model = TestModel(name=name, architecture='models/'+filename, user=id)
         model.save()
         return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Architecture successfully uploaded.\"}")
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
 
 @csrf_exempt
 def labels(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         filename = body['filename']
+        filename = str(id) + '_' + filename
         name = body['name']
         save_file('models/'+filename, body['file'])
-        model = TestModel.objects.filter(name=name).first()
+        model = TestModel.objects.filter(name=name, user=id).first()
         model.labels = 'models/'+filename
         model.save()
         return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Labels successfully uploaded.\"}")

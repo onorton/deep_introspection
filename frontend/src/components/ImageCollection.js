@@ -14,27 +14,36 @@ export default class ImageCollection extends Component {
     };
   }
 
-  componentWillMount() {
+  componentWillReceiveProps(nextProps) {
+    if (this.props.user == null && nextProps.user != null) {
+      this.fetchImages(nextProps.user)
+    }
+
+    if (nextProps.user == null) {
+      this.setState({images: [], selected: 0})
+    }
+  }
+
+  fetchImages(user) {
     const collection = this
     fetch('http://127.0.0.1:8000/uploadImage/', {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
-      }
+      },
+      credentials:'same-origin'
     }).then(function(response) {
       if (response.status == 200) {
         response.json().then(function(data) {
           collection.setState({images: data.images})
           collection.props.callbackParent(data.images[0])
-
         })
       }
-
     }).catch(function(error) {
       console.log('There has been a problem with your fetch operation: ' + error.message);
     });
-  }
 
+  }
 
 
   select(index) {
@@ -76,7 +85,9 @@ export default class ImageCollection extends Component {
         body: JSON.stringify({name: name, image: reader.result}),
         headers: {
             "Content-Type": "application/json"
-        }
+        },
+        credentials:'same-origin'
+
       }).then(function(response) {
 
         if (response.status == 200) {

@@ -5,6 +5,8 @@ import styles from '../node_modules/@blueprintjs/core/dist/blueprint.css';
 
 import ImageCollection from './components/ImageCollection'
 import UploadModelOverlay from './components/UploadModelOverlay'
+import LoginOverlay from './components/LoginOverlay'
+
 import ToolCollection from './components/ToolCollection'
 
 class App extends Component {
@@ -12,7 +14,8 @@ class App extends Component {
     super(props);
     this.state = {
       testImage: null,
-      testModel: null
+      testModel: null,
+      user: null
     };
   }
 
@@ -23,17 +26,38 @@ class App extends Component {
   onTestImageChanged(img) {
     this.setState({testImage:img})
   }
+
+  logout() {
+    const app = this
+    fetch('http://127.0.0.1:8000/accounts/logout', {
+      method: 'POST',
+      headers: {
+          "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+
+    }).then(function(response) {
+      if (response.status == 200) {
+        app.setState({user:null,testImage:null,testModel:null})
+      }
+    }).catch(function(error) {
+      console.log('There has been a problem with your fetch operation: ' + error.message);
+    });
+  }
+
   render() {
     return (
       <div className="App">
         <header className="App-header">
           <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
+          <label style={{float:'right'}}className="pt-file-upload pt-button pt-icon-log-out pt-intent-primary " onClick={() => {this.logout()}}>Logout</label>
         </header>
-        <UploadModelOverlay callbackParent={(model) => this.onTestModelChanged(model)}/>
+        <LoginOverlay isOpen={this.state.user == null}callbackParent={(user) => this.setState({user:user})}/>
+        {this.state.user != null ? <UploadModelOverlay callbackParent={(model) => this.onTestModelChanged(model)}/> : <div/>}
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 110, width:"100%" }}>
           {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
         </div>
-        <ImageCollection callbackParent={(img) => this.onTestImageChanged(img)} style={{width:250, height:750}}/>
+        <ImageCollection user={this.state.user} callbackParent={(img) => this.onTestImageChanged(img)} style={{width:250, height:750}}/>
       </div>
     );
   }

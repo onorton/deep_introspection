@@ -27,7 +27,8 @@ export default class UploadModelOverlay extends Component {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
-      }
+      },
+      credentials: 'same-origin'
     }).then(function(response) {
       if (response.status == 200) {
         response.json().then(function(data) {
@@ -86,7 +87,8 @@ export default class UploadModelOverlay extends Component {
         body: JSON.stringify({name: modelName, filename: overlay.state.model.name, part: reader.result, blobNum: i}),
         headers: {
             "Content-Type": "application/json"
-        }
+        },
+        credentials: 'same-origin'
       }).then(function(response) {
         count--;
         overlay.setState({percentage: (100*(numBlobs-count)/numBlobs)})
@@ -97,7 +99,8 @@ export default class UploadModelOverlay extends Component {
             body: JSON.stringify({name: modelName,  filename: overlay.state.model.name, blobNum: -1}),
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            credentials: 'same-origin'
           }).then(function(response){
             if (response.status == 200) {
               MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Weights file uploaded." });
@@ -143,7 +146,8 @@ export default class UploadModelOverlay extends Component {
         body: JSON.stringify({name: modelName, filename: overlay.state.architecture.name, file: architectureReader.result}),
         headers: {
             "Content-Type": "application/json"
-        }
+        },
+        credentials: 'same-origin'
       }).then(function(response) {
         if (response.status == 200) {
           MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Architecture file submitted." });
@@ -157,7 +161,8 @@ export default class UploadModelOverlay extends Component {
             body: JSON.stringify({name: modelName, filename:  overlay.state.labels.name, file: labelsReader.result}),
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            credentials: 'same-origin'
           }).then(function(response) {
             if (response.status == 200) {
               MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Class labels file submitted." });
@@ -186,6 +191,7 @@ export default class UploadModelOverlay extends Component {
   }
 
   render(){
+    console.log(this.state.isOpen)
     return (
           <Dialog isOpen={this.state.isOpen} title="Add Model"
             onClose={() => this.setState({isOpen:false})}
