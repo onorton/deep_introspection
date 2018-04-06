@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Scrollbars } from 'react-custom-scrollbars';
 import Cookies from 'js-cookie';
-import { Position, Toaster, Intent } from "@blueprintjs/core";
+import { Position, Toaster, Intent , Collapse} from "@blueprintjs/core";
 import {MainToaster} from '../MainToaster'
 
 import UploadModelOverlay from './UploadModelOverlay'
@@ -14,6 +14,7 @@ export default class ModelCollection extends Component {
       models: [],
       selected: 0,
       add: false,
+      open: true,
     };
   }
 
@@ -71,34 +72,39 @@ export default class ModelCollection extends Component {
     let selected = this.state.selected;
     let selectedStyle = { outlineColor: '#137CBD', outlineStyle: 'solid',  width: '90%'}
     let modelStyle = {width: '90%'}
+    console.log(this.state.models)
     return (
       <div>
-      <UploadModelOverlay isOpen={this.props.user != null && this.state.add} first={this.state.models.length == 0} callbackParent={(model) => this.onModelUploaded(model)}/>
+      <UploadModelOverlay isOpen={this.props.user != null && this.state.add} first={this.state.models.length == 0} reset={() => this.setState({add:false})} callbackParent={(model) => this.onModelUploaded(model)}/>
       <div style={this.props.style}>
         <div style={{backgroundColor: '#BFCCD6'}}>
-        <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59', height:40, padding:5}}>
-        <span style={{color:'#FFFFFF', fontSize:'15pt'}}>Test Models</span>
-        <span style={{marginLeft:10, cursor:'pointer'}} className="pt-interactive pt-icon-add pt-icon-large" onClick={() => collection.setState({add: true})}></span>
+        <div className="pt-card" style={{backgroundColor: '#5C7080', borderStyle:'solid', borderWidth:'2px', borderColor:'#394B59', height:40, padding:5, position:'relative'}}>
+        <div className="clickable" onClick={() => this.setState({open:!this.state.open})}><span  style={{color:'#FFFFFF', fontSize:'15pt'}}>Test Models</span></div>
+        <span style={{float:'right', marginTop: -22, cursor:'pointer'}} className="pt-interactive pt-icon-add pt-icon-large" onClick={() => collection.setState({add: true})}></span>
         </div>
-        {this.state.models.length == 0 ? (
 
-        <div class="pt-non-ideal-state" style={{height:150, paddingTop:20}}>
-        <div class="pt-non-ideal-state-visual pt-non-ideal-state-icon">
-        <span class="pt-icon pt-icon-media"></span>
-        </div>
-        <h4 class="pt-non-ideal-state-title">There are no test models</h4>
-        <div class="pt-non-ideal-state-description">
-          Add a new model to get started.
+        <Collapse isOpen={this.state.open}>
+        {this.state.models.length == 0 ? (
+        <div class="pt-non-ideal-state" style={{height:80, paddingTop:90}}>
+          <div class="pt-non-ideal-state-visual pt-non-ideal-state-icon">
+            <span class="pt-icon pt-icon-media"></span>
           </div>
-        </div>) : <div></div>}
-        <Scrollbars style={{width: this.props.style.width, height:this.props.style.height}}>
+          <h4 class="pt-non-ideal-state-title">There are no test models</h4>
+          <div class="pt-non-ideal-state-description">
+            Add a new model to get started.
+          </div>
+        </div>) : <div/>}
+
+        <Scrollbars style={{width: this.props.style.width, height:this.props.scrollHeight}}>
           <ul style={{listStyleType: 'none', padding: 0, position:'relative'}}>
            {
              this.state.models.map(function(model, index){
-           return <li style={{padding: '5px 0px 5px 0px'}}><label onClick={() => collection.select(index)} style={(index == selected) ? selectedStyle : modelStyle} className="pt-button">{model.name}</label></li>;
+           return <li style={{padding: '2px 0px 2px 0px'}}><label onClick={() => collection.select(index)} style={(index == selected) ? selectedStyle : modelStyle} className="pt-button">{model.name}</label></li>;
                    })}
            </ul>
         </Scrollbars>
+        </Collapse>
+
       </div>
       </div>
       </div>

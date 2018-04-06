@@ -188,6 +188,7 @@ export default class UploadModelOverlay extends Component {
       percentage: null
     };
     this.setState(initialState)
+    this.props.reset()
   }
 
   render(){
