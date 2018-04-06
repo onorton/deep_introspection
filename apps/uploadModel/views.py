@@ -49,10 +49,11 @@ def index(request):
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
     elif request.method == 'GET':
         if TestModel.objects.first() != None:
-            model = TestModel.objects.filter(user=id).first()
-            return HttpResponse("{\"model\": { \"name\": \"" + model.name + "\", \"id\":" + str(model.id) + "}, \"message\": \"Model successfully retrieved.\"}")
+            models = TestModel.objects.filter(user=id)
+            models = json.dumps(list(map(lambda model: {"name": model.name, "id" : model.id}, models)))
+            return HttpResponse("{\"models\": " + models + ", \"message\": \"Model successfully retrieved.\"}")
         else:
-            return HttpResponse("{\"model\": null, \"message\": \"No model exists.\"}", status=404)
+            return HttpResponse("{\"models\": null, \"message\": \"No model exists.\"}", status=404)
 
 
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)

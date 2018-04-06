@@ -32,7 +32,7 @@ export default class UploadModelOverlay extends Component {
     }).then(function(response) {
       if (response.status == 200) {
         response.json().then(function(data) {
-          collection.props.callbackParent(data.model)
+          collection.props.callbackParent(data.models[0])
         })
       } else if (response.status == 404) {
         collection.setState({isOpen: true})
