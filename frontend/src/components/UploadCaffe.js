@@ -4,7 +4,7 @@ import {MainToaster} from '../MainToaster.js'
 
 const blobSize = 5242880
 
-export default class UploadModelOverlay extends Component {
+export default class UploadCaffe extends Component {
 
   constructor(props) {
     super(props);
@@ -197,7 +197,7 @@ export default class UploadModelOverlay extends Component {
 
 
     return (
-      <div style={{padding: 15}}>
+      <div>
               <label class="pt-label">
               <h5>Architecture File</h5>
               <p>This is the *.prototxt file that defines the architecture of the network.</p>

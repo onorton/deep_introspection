@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
-import { Dialog, Tooltip, Position, Intent} from "@blueprintjs/core";
+import { Dialog, Tooltip, Position, Intent, Tabs2, Tab2} from "@blueprintjs/core";
 import {MainToaster} from '../MainToaster.js'
 import UploadCaffe from './UploadCaffe'
+import UploadTensorFlow from './UploadTensorFlow'
 
 const blobSize = 5242880
 
@@ -41,7 +42,14 @@ export default class UploadModelOverlay extends Component {
             onClose={evt => this.reset()}
             >
              {(this.props.first) ? <p style={{paddingLeft:15, paddingRight: 15, paddingTop: 15}}>Before using Deep Introspection, you need to upload a network model to analyse.</p> : <div/>}
-          <UploadCaffe onRef={ref => (this.child = ref)} updateProgress={(percentage) => this.setState({percentage:percentage})} callbackParent={(model) => this.props.callbackParent(model)}/>
+             <div  style={{padding: 15}}>
+             <Tabs2 id="typeTabs" onChange={this.handleTabChange}>
+              <Tab2 id="ca" title={<h5>Caffe</h5>} panel={<UploadCaffe onRef={ref => (this.caffe = ref)} updateProgress={(percentage) => this.setState({percentage:percentage})} callbackParent={(model) => this.props.callbackParent(model)}/>} />
+              <Tab2 id="tf" title={<h5>TensorFlow</h5>} panel={<UploadTensorFlow onRef={ref => (this.tensorflow = ref)} updateProgress={(percentage) => this.setState({percentage:percentage})} callbackParent={(model) => this.props.callbackParent(model)}/>}/>
+            </Tabs2>
+            </div>
+
+
         <div className="pt-dialog-footer" >
                     {(this.state.percentage != null) ?
                       <div class="pt-progress-bar pt-intent-primary" style={{width: "65%"}}>
@@ -49,7 +57,7 @@ export default class UploadModelOverlay extends Component {
                       </div> : <div/>
                     }
                        <div className="pt-dialog-footer-actions">
-                       <button type="button" className="pt-button pt-icon-add" onClick={() => this.child.upload()} style={{marginTop:-20}}>Upload Model</button>
+                       <button type="button" className="pt-button pt-icon-add" onClick={() => this.caffe.upload()} style={{marginTop:-20}}>Upload Model</button>
                        </div>
                    </div>
           </Dialog>
