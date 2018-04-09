@@ -219,6 +219,44 @@ export default class UploadTensorFlow extends Component {
 
       let modelName =  overlay.state.meta.name.split('.')[0]
       this.uploadMeta()
+
+      // Submit Index and Checkpoint files
+
+      var indexReader = new FileReader();
+      indexReader.readAsDataURL(overlay.state.index);
+      indexReader.onload = function () {
+
+        var checkpointReader = new FileReader();
+        checkpointReader.readAsDataURL(overlay.state.checkpoint);
+        checkpointReader.onload = function () {
+          // If successfully read file, save on file system
+        fetch('http://127.0.0.1:8000/uploadModel/tensorflow/rest/', {
+          method: 'POST',
+          body: JSON.stringify({name: modelName, checkpoint: checkpointReader.result, index_file: indexReader.result}),
+          headers: {
+              "Content-Type": "application/json"
+          },
+          credentials: 'same-origin'
+        }).then(function(response) {
+          if (response.status == 200) {
+            MainToaster.show({ timeout:5000, intent: Intent.SUCCESS, message: "Index and checkpoint files submitted." });
+          }
+          return response.json();
+        }).catch(function(error) {
+          console.log('There has been a problem with your fetch operation: ' + error.message);
+        });
+
+        }
+
+        checkpointReader.onerror = function (error) {
+         console.log('Error: ', error);
+        };
+
+    };
+  indexReader.onerror = function (error) {
+   console.log('Error: ', error);
+  };
+
       // Submit labels file
       if (overlay.state.labels != null) {
         var labelsReader = new FileReader();

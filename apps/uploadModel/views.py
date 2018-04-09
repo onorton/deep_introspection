@@ -159,6 +159,33 @@ def tf_architecture(request):
         save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
 
+
+
+@csrf_exempt
+def tf_index_checkpoint(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        index_name = str(id) + '_' + name + '.index'
+        checkpoint_name = str(id) + '_' + name + '_checkpoint'
+
+        model = TestModel.objects.filter(name=name, user=id).first()
+
+        save_file('models/'+index_name, body['index_file'])
+        model.index_file = 'models/'+index_name
+
+        save_file('models/'+checkpoint_name, body['checkpoint'])
+        model.checkpoint = 'models/'+checkpoint_name
+
+        model.save()
+        return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Index and checkpont successfully uploaded.\"}")
+
+
+
 @csrf_exempt
 def labels(request):
     if request.user.id ==  None:
