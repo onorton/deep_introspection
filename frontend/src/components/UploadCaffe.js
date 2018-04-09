@@ -69,7 +69,7 @@ export default class UploadCaffe extends Component {
       reader.readAsDataURL(overlay.state.model.slice(i*blobSize,(i+1)*blobSize));
       reader.onload = function () {
       // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/', {
+      fetch('http://127.0.0.1:8000/uploadModel/weights/', {
         method: 'POST',
         body: JSON.stringify({name: modelName, filename: overlay.state.model.name, part: reader.result, blobNum: i}),
         headers: {
@@ -81,7 +81,7 @@ export default class UploadCaffe extends Component {
         overlay.props.updateProgress(100*(numBlobs-count)/numBlobs)
         // send message to server letting it know all the data has been sent.
         if (count == 0) {
-          fetch('http://127.0.0.1:8000/uploadModel/', {
+          fetch('http://127.0.0.1:8000/uploadModel/weights/', {
             method: 'POST',
             body: JSON.stringify({name: modelName,  filename: overlay.state.model.name, blobNum: -1}),
             headers: {
