@@ -82,6 +82,9 @@ export default class UploadTensorFlow extends Component {
     }
   }
 
+  upload() {
+  }
+
   reset() {
     const initialState = {
       validMeta: true,
@@ -99,8 +102,6 @@ export default class UploadTensorFlow extends Component {
   }
 
   render(){
-    console.log(this.state.data)
-
     return (
       <div>
               <label class="pt-label">

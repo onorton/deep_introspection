@@ -12,7 +12,8 @@ export default class UploadModelOverlay extends Component {
     super(props);
     this.state = {
       isOpen: props.isOpen,
-      percentage: null
+      percentage: null,
+      type: 'ca'
     };
   }
 
@@ -20,15 +21,28 @@ export default class UploadModelOverlay extends Component {
     this.setState({isOpen:nextProps.isOpen})
   }
 
+  changeTab(id) {
+    this.setState({type:id})
+    this.handleTabChange
+  }
+
+  upload() {
+    switch(this.state.type) {
+      case 'ca': this.caffe.upload(); break;
+      case 'tf': this.tensorflow.upload(); break;
+    }
+  }
 
   reset() {
     const initialState = {
       isOpen: false,
-      percentage: null
+      percentage: null,
+      type: 'ca'
     };
     this.setState(initialState)
     this.props.reset()
   }
+
 
   render(){
 
@@ -43,7 +57,7 @@ export default class UploadModelOverlay extends Component {
             >
              {(this.props.first) ? <p style={{paddingLeft:15, paddingRight: 15, paddingTop: 15}}>Before using Deep Introspection, you need to upload a network model to analyse.</p> : <div/>}
              <div  style={{padding: 15}}>
-             <Tabs2 id="typeTabs" onChange={this.handleTabChange}>
+             <Tabs2 id="typeTabs" onChange={(newId, prevId, evt) => this.changeTab(newId)}>
               <Tab2 id="ca" title={<h5>Caffe</h5>} panel={<UploadCaffe onRef={ref => (this.caffe = ref)} updateProgress={(percentage) => this.setState({percentage:percentage})} callbackParent={(model) => this.props.callbackParent(model)}/>} />
               <Tab2 id="tf" title={<h5>TensorFlow</h5>} panel={<UploadTensorFlow onRef={ref => (this.tensorflow = ref)} updateProgress={(percentage) => this.setState({percentage:percentage})} callbackParent={(model) => this.props.callbackParent(model)}/>}/>
             </Tabs2>
@@ -57,7 +71,7 @@ export default class UploadModelOverlay extends Component {
                       </div> : <div/>
                     }
                        <div className="pt-dialog-footer-actions">
-                       <button type="button" className="pt-button pt-icon-add" onClick={() => this.caffe.upload()} style={{marginTop:-20}}>Upload Model</button>
+                       <button type="button" className="pt-button pt-icon-add" onClick={() => this.upload()} style={{marginTop:-20}}>Upload Model</button>
                        </div>
                    </div>
           </Dialog>
