@@ -6,9 +6,7 @@ from apps.features.models import FeatureSet
 from apps.uploadModel.models import TestModel
 from apps.uploadImage.models import TestImage
 
-from deep_introspection import lrp
-from deep_introspection import utils
-from deep_introspection import features
+from deep_introspection import lrp, utils, features, network
 
 import caffe
 import numpy as np
@@ -44,7 +42,7 @@ def get_top_predictions(predictions, num, labels):
 def predictions_from_features(net, img_path, inactive_features):
 
     img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
-    net.image_dims = newSize
+    net.set_new_size(newSize)
 
     random_nums = 256*np.random.uniform(size=img.shape)
 
@@ -53,13 +51,12 @@ def predictions_from_features(net, img_path, inactive_features):
     for index in inactive_features:
         img[index] = random_nums[index]-mean[2-index[2]]
 
-    net.predict([img],oversample=True)
-    predictions = np.mean(net.blobs['prob'].data, axis=0)
+    predictions = net.predict(img)
+    predictions = np.mean(predictions, axis=0)
 
     img[:, :, 0] += mean[2]
     img[:, :, 1] += mean[1]
     img[:, :, 2] += mean[0]
-
 
     return predictions, img
 
@@ -76,10 +73,11 @@ def index(request, model, image):
         architecture = str(test_model.architecture)
         weights = str(test_model.weights)
 
-        net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
+        net = network.CaffeNet(architecture, weights)
 
         img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
-        net.image_dims = newSize
+        net.set_new_size(newSize)
+
         relevances = lrp.calculate_lrp_heatmap(net, img, architecture)
         clusters = features.extract_features_from_relevances(relevances)
         write_clusters(features_path, clusters)
@@ -118,7 +116,7 @@ def evaluate(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
+    net = network.CaffeNet(architecture, weights)
 
     predictions, img = predictions_from_features(net, img_path, inactive_features)
     top_predictions = get_top_predictions(predictions, 5, labels)
@@ -142,7 +140,7 @@ def analyse(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
+    net = network.CaffeNet(architecture, weights)
 
     predictions, _ =  predictions_from_features(net, img_path, [])
     basic_predictions = get_top_predictions(predictions, -1, labels)
