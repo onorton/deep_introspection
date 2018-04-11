@@ -1,4 +1,5 @@
 import caffe
+import tensorflow as tf
 from caffe.proto import caffe_pb2
 from google.protobuf import text_format
 
@@ -53,3 +54,33 @@ class CaffeNet:
                 layer_names.append(self.net._layer_names[i])
 
         return layer_names
+
+class TensorFlowNet:
+    sess = None
+
+    def __init__(self, meta, dir):
+        self.sess = tf.Session()
+        new_saver = tf.train.import_meta_graph(meta)
+        new_saver.restore(self.sess, tf.train.latest_checkpoint(dir))
+
+    def get_weights(self, layer):
+        weights = self.sess.graph.get_tensor_by_name(layer+'/weights:0')
+        weights = weights.eval(session=self.sess)
+        if len(weights.shape) == 4:
+            return weights.transpose(3,0,1,2)
+        return weights.transpose()
+
+    def get_activations(self, layer):
+        pass
+
+    def get_layer_type(self, layer):
+        pass
+
+    def get_kernel_size(self, layer):
+        pass
+
+    def predict(self, img):
+        pass
+
+    def get_layer_names(self) :
+        pass
