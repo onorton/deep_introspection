@@ -4,8 +4,7 @@ import caffe
 import time
 from deep_introspection import im2col
 
-from caffe.proto import caffe_pb2
-from google.protobuf import text_format
+
 
 def get_layer_names(net) :
     """Gets the layer names of relevant networks in order
@@ -58,27 +57,27 @@ def propagate_fully_to_conv(relevances, weights, activations, alpha):
 def propagate_conv(net, relevances, activations, weightsLayer, alpha):
     beta = alpha - 1
 
-    positiveWeights = np.maximum(net.params[weightsLayer][0].data[...], 1e-9)
-    negativeWeights = np.minimum(net.params[weightsLayer][0].data[...], -1e-9)
+    positiveWeights = np.maximum(net.get_weights(weightsLayer), 1e-9)
+    negativeWeights = np.minimum(net.get_weights(weightsLayer), -1e-9)
 
-    z = forward(activations, positiveWeights, net.blobs[weightsLayer].data[0].shape)
+    z = forward(activations, positiveWeights, net.get_activations(weightsLayer).shape)
     s = relevances/z
     positive = backprop(s, positiveWeights, activations)
 
-    z = forward(activations, negativeWeights, net.blobs[weightsLayer].data[0].shape)
+    z = forward(activations, negativeWeights, net.get_activations(weightsLayer).shape)
     s = relevances/z
     negative = backprop(s, negativeWeights, activations)
 
     return activations*(alpha*positive - beta*negative)
 
 def propagate_first_conv(net, relevances, activations, weightsLayer, h, l):
-    positiveWeights = np.maximum(net.params[weightsLayer][0].data[...], 0)
-    negativeWeights = np.minimum(net.params[weightsLayer][0].data[...], 0)
-    weights = net.params[weightsLayer][0].data[...]
+    positiveWeights = np.maximum(net.get_weights(weightsLayer), 0)
+    negativeWeights = np.minimum(net.get_weights(weightsLayer), 0)
+    weights = net.get_weights(weightsLayer)
 
     X,L,H = activations,0*activations+l,0*activations+h
 
-    z = forward(X, weights, net.blobs[weightsLayer].data[0].shape) - forward(L, positiveWeights, net.blobs[weightsLayer].data[0].shape) - forward(H, negativeWeights, net.blobs[weightsLayer].data[0].shape)+1e-9
+    z = forward(X, weights, net.get_activations(weightsLayer).shape) - forward(L, positiveWeights, net.get_activations(weightsLayer).shape) - forward(H, negativeWeights, net.get_activations(weightsLayer).shape)+1e-9
     s = relevances/z
 
     return X*backprop(s, weights, X) - L*backprop(s, positiveWeights, L) - H*backprop(s, negativeWeights, H)
@@ -121,7 +120,7 @@ def propagate_pooling(net, relevances, activations, poolLayer, k):
     output
     relevances of current layer
     """
-    z = forwardMax(activations, k, net.blobs[poolLayer].data[0].shape)+1e-9
+    z = forwardMax(activations, k, net.get_activations(poolLayer).shape)+1e-9
     s = relevances/z
     c = backwardMax(s, activations, k)
     relevances = activations*c
@@ -168,43 +167,37 @@ def calculate_lrp_heatmap(net, img, architecture):
     output
     relevances of current layer
     """
-    layer_names = get_layer_names(net)
-    net.predict([img])
-    prediction = np.argmax(np.mean(net.blobs['prob'].data, axis=0))
-    relevances = np.zeros(net.blobs['prob'].data[0].shape)
+    layer_names = net.get_layer_names()
+    predictions = net.predict(img)
+    prediction = np.argmax(np.mean(predictions, axis=0))
+    relevances = np.zeros(predictions[0].shape)
     relevances[prediction] = 1
     l = np.amin(img)
     h = np.amax(img)
     alpha = 2
     print("Using alpha " + str(alpha) + " and beta " + str(alpha-1))
     print(prediction)
-    layer_names = get_layer_names(net)
+    layer_names = net.get_layer_names()
     layer_names.reverse()
-
-
-    parsible_net = caffe_pb2.NetParameter()
-    text_format.Merge(open(architecture).read(), parsible_net)
-
-
 
     for index in range(len(layer_names)-1) :
         name = layer_names[index]
         next_layer = layer_names[index+1]
-        layer_type = net.layers[list(net._layer_names).index(name)].type
+        layer_type = net.get_layer_type(name)
 
         if layer_type == 'Pooling':
-            kernel = [x for x in parsible_net.layers if x.name == name][0].pooling_param.kernel_size
-            relevances = propagate_pooling(net, relevances, net.blobs[next_layer].data[0], name, kernel)
+            kernel = net.get_kernel_size(name)
+            relevances = propagate_pooling(net, relevances, net.get_activations(next_layer), name, kernel)
         elif layer_type == 'InnerProduct':
-            next_layer_type = net.layers[list(net._layer_names).index(next_layer)].type
+            next_layer_type = net.get_layer_type(next_layer)
             if next_layer_type != 'InnerProduct' :
-                relevances = propagate_fully_to_conv(relevances, np.transpose(net.params[name][0].data), net.blobs[next_layer].data[0], alpha)
+                relevances = propagate_fully_to_conv(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha)
             else:
-                relevances = propagate_fully_connected(relevances, np.transpose(net.params[name][0].data), net.blobs[next_layer].data[0], alpha) # relevances of fc6
+                relevances = propagate_fully_connected(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha) # relevances of fc6
         elif layer_type == 'Convolution' and next_layer == 'data':
-            relevances = propagate_first_conv(net, relevances, net.blobs[next_layer].data[0], name, h, l)
+            relevances = propagate_first_conv(net, relevances, net.get_activations(next_layer), name, h, l)
         elif layer_type == 'Convolution':
-            relevances =  propagate_conv(net, relevances,  net.blobs[next_layer].data[0], name, alpha)
+            relevances =  propagate_conv(net, relevances, net.get_activations(next_layer), name, alpha)
 
     relevances =  np.mean(relevances.transpose(1,2,0), 2)
 
