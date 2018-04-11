@@ -21,3 +21,18 @@ class CaffeNet:
         self.net.predict([img[0]])
         self.predicted = True
         return self.net.blobs['prob'].data
+
+    def get_layer_names(self) :
+        """Gets the layer names of relevant networks in order
+        net: caffe network
+        output
+        list of layer names
+        """
+
+        layer_names = ['data']
+
+        for i in range(len(list(self.net._layer_names))):
+            if self.net.layers[i].type == 'Convolution' or self.net.layers[i].type == 'Pooling' or self.net.layers[i].type == 'InnerProduct':
+                layer_names.append(self.net._layer_names[i])
+
+        return layer_names
