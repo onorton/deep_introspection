@@ -2,6 +2,7 @@ import caffe
 import tensorflow as tf
 from caffe.proto import caffe_pb2
 from google.protobuf import text_format
+import numpy as np
 
 class CaffeNet:
     net = None
@@ -80,7 +81,15 @@ class TensorFlowNet:
         pass
 
     def predict(self, img):
-        pass
+        placeholder = list(filter(lambda x: x.type == 'Placeholder', self.sess.graph.get_operations()))[0]
+        placeholder = placeholder.values()
+
+        probs = self.sess.graph.get_operation_by_name('Softmax').values()
+
+        img = np.array([img])
+        prob = self.sess.run(probs, feed_dict={placeholder: [img]})[0]
+
+        return prob
 
     def get_layer_names(self) :
         pass

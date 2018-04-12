@@ -1,10 +1,14 @@
 from deep_introspection import network, utils
+from scipy.misc import imread, imresize
 
 net = network.CaffeNet('deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel')
 img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
 net.set_new_size(newSize)
 
 tfNet = network.TensorFlowNet('deep_introspection/test/vgg16.meta', './deep_introspection/test/')
+
+img1 = imread('deep_introspection/test/cat.jpg', mode='RGB')
+img1 = imresize(img1, (224, 224))
 
 def test_caffe_conv_weights_correct_shape():
     weights = net.get_weights('conv1_1')
@@ -43,3 +47,6 @@ def test_tf_conv_weights_correct_shape():
 def test_tf_fc_weights_correct_shape():
     weights = tfNet.get_weights('fc3')
     assert(weights.shape == (1000,4096))
+
+def test_tf_predictions_sensible():
+    assert(tfNet.predict(img1).shape == (1, 1000))
