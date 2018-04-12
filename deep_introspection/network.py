@@ -75,7 +75,16 @@ class TensorFlowNet:
         pass
 
     def get_layer_type(self, layer):
-        pass
+        try:
+            self.sess.graph.get_operation_by_name(layer+'/Conv2D')
+            return "Convolution"
+        except:
+            try:
+                self.sess.graph.get_operation_by_name(layer+'/MatMul')
+                return "InnerProduct"
+            except:
+                return "Pooling"
+
 
     def get_kernel_size(self, layer):
         return [int(a) for a in list(filter(lambda n: n.name == layer, self.sess.graph.as_graph_def().node))[0].attr['ksize'].list.i][1]
