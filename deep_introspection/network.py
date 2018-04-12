@@ -21,7 +21,7 @@ class CaffeNet:
         return self.net.params[layer][0].data
 
     def get_activations(self, layer):
-        if self.predicted == False:
+        if not self.predicted:
             return None
         return self.net.blobs[layer].data[0]
 
@@ -58,6 +58,8 @@ class CaffeNet:
 
 class TensorFlowNet:
     sess = None
+    img = None
+    predicted = False
 
     def __init__(self, meta, dir):
         self.sess = tf.Session()
@@ -72,7 +74,27 @@ class TensorFlowNet:
         return weights.transpose()
 
     def get_activations(self, layer):
-        pass
+        if not self.predicted:
+            return None
+
+        placeholder = list(filter(lambda x: x.type == 'Placeholder', self.sess.graph.get_operations()))[0]
+        placeholder = placeholder.values()
+
+        probs = self.sess.graph.get_operation_by_name('Softmax').values()
+
+        layer_type = self.get_layer_type(layer)
+        if layer_type == 'Convolution' or layer_type == 'Pooling':
+            layer = self.sess.graph.get_operation_by_name(layer).values()
+        else:
+            layer = self.sess.graph.get_operation_by_name(layer+'/Relu').values()
+
+        layer = self.sess.run(layer, feed_dict={placeholder: [self.img]})[0][0]
+
+        if layer_type == 'Convolution' or layer_type == 'Pooling':
+            return layer.transpose(2, 0, 1)
+
+        return layer
+
 
     def get_layer_type(self, layer):
         try:
@@ -95,8 +117,9 @@ class TensorFlowNet:
 
         probs = self.sess.graph.get_operation_by_name('Softmax').values()
 
-        img = np.array([img])
-        prob = self.sess.run(probs, feed_dict={placeholder: [img]})[0]
+        self.img = np.array([img])
+        self.predicted = True
+        prob = self.sess.run(probs, feed_dict={placeholder: [self.img]})[0]
 
         return prob
 
