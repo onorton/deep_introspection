@@ -77,7 +77,8 @@ def tf_data(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
-        filename =  str(id) + '_' + name + '.data'
+        directory =  str(id) + '_' + name
+        filename = directory + '/' + body['filename']
         if body['blobNum'] == -1:
             # Combine all parts of the file together
             files = glob.glob('models/'+filename+'.*')
@@ -129,7 +130,8 @@ def tf_architecture(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
-        filename =  str(id) + '_' + name + '.meta'
+        directory =  str(id) + '_' + name
+        filename = directory + '/' + body['filename']
         if body['blobNum'] == -1:
             # Combine all parts of the file together
             files = glob.glob('models/'+filename+'.*')
@@ -148,13 +150,13 @@ def tf_architecture(request):
             return HttpResponse("{\"name\": \"" + name + "\", \"id\": " + str(model.id) + ",\"message\": \"Model MetaGraph successfully uploaded.\"}")
 
         if body['blobNum'] == 0:
-
             # Check if model already exists
             if TestModel.objects.filter(name=name, user=id).count() != 0:
                 return HttpResponse("{}",status=409)
 
             model = TestModel(name=name, architecture='models/'+filename, user=id)
             model.save()
+            os.makedirs('models/'+directory)
 
         save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
@@ -170,8 +172,10 @@ def tf_index_checkpoint(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
-        index_name = str(id) + '_' + name + '.index'
-        checkpoint_name = str(id) + '_' + name + '_checkpoint'
+        directory = str(id) + '_' + name
+
+        index_name = directory +'/' + body['index_filename']
+        checkpoint_name = directory + '/' + body['checkpoint_filename']
 
         model = TestModel.objects.filter(name=name, user=id).first()
 
@@ -182,9 +186,24 @@ def tf_index_checkpoint(request):
         model.checkpoint = 'models/'+checkpoint_name
 
         model.save()
-        return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Index and checkpont successfully uploaded.\"}")
+        return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Index and checkpoint successfully uploaded.\"}")
 
-
+@csrf_exempt
+def tf_labels(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        directory = str(id) + '_' + name
+        filename = directory + '/' + body['filename']
+        save_file('models/'+filename, body['file'])
+        model = TestModel.objects.filter(name=name, user=id).first()
+        model.labels = 'models/'+filename
+        model.save()
+        return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Labels successfully uploaded.\"}")
+    return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
 
 @csrf_exempt
 def labels(request):
@@ -194,7 +213,7 @@ def labels(request):
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
-        filename = str(id) + '_' + name + '_labels.txt'
+        filename = str(id) + '_' + name +'_labels.txt'
         save_file('models/'+filename, body['file'])
         model = TestModel.objects.filter(name=name, user=id).first()
         model.labels = 'models/'+filename

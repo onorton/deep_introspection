@@ -232,7 +232,7 @@ export default class UploadTensorFlow extends Component {
           // If successfully read file, save on file system
         fetch('http://127.0.0.1:8000/uploadModel/tensorflow/rest/', {
           method: 'POST',
-          body: JSON.stringify({name: modelName, checkpoint: checkpointReader.result, index_file: indexReader.result}),
+          body: JSON.stringify({name: modelName, checkpoint_filename:overlay.state.checkpoint.name, index_filename: overlay.state.index.name, checkpoint: checkpointReader.result, index_file: indexReader.result}),
           headers: {
               "Content-Type": "application/json"
           },
@@ -263,7 +263,7 @@ export default class UploadTensorFlow extends Component {
         labelsReader.readAsDataURL(overlay.state.labels);
         labelsReader.onload = function () {
       // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/labels/', {
+      fetch('http://127.0.0.1:8000/uploadModel/tensorflow/labels/', {
         method: 'POST',
         body: JSON.stringify({name: modelName, filename:  overlay.state.labels.name, file: labelsReader.result}),
         headers: {
