@@ -45,22 +45,37 @@ def get_top_predictions(predictions, num, labels):
 
 def predictions_from_features(net, img_path, inactive_features):
 
-    img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
-    net.set_new_size(newSize)
 
-    random_nums = 256*np.random.uniform(size=img.shape)
+    if isinstance(net, network.TensorFlowNet):
+        img = imread(img_path, mode='RGB')
+        img = imresize(img, (224, 224))
 
-    mean = np.array([103.939, 116.779, 123.68])
+        random_nums = 256*np.random.uniform(size=img.shape)
 
-    for index in inactive_features:
-        img[index] = random_nums[index]-mean[2-index[2]]
+        for index in inactive_features:
+            img[index] = random_nums[index]
 
-    predictions = net.predict(img)
-    predictions = np.mean(predictions, axis=0)
+        predictions = net.predict(img)
+        predictions = np.mean(predictions, axis=0)
 
-    img[:, :, 0] += mean[2]
-    img[:, :, 1] += mean[1]
-    img[:, :, 2] += mean[0]
+    else:
+        img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
+        net.set_new_size(newSize)
+
+        random_nums = 256*np.random.uniform(size=img.shape)
+
+        mean = np.array([103.939, 116.779, 123.68])
+
+        for index in inactive_features:
+            img[index] = random_nums[index]-mean[2-index[2]]
+
+        predictions = net.predict(img)
+        predictions = np.mean(predictions, axis=0)
+
+        img[:, :, 0] += mean[2]
+        img[:, :, 1] += mean[1]
+        img[:, :, 2] += mean[0]
+
 
     return predictions, img
 
@@ -125,7 +140,10 @@ def evaluate(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    net = network.CaffeNet(architecture, weights)
+    if test_model.checkpoint != "":
+        net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
+    else:
+        net = network.CaffeNet(architecture, weights)
 
     predictions, img = predictions_from_features(net, img_path, inactive_features)
     top_predictions = get_top_predictions(predictions, 5, labels)
@@ -149,7 +167,10 @@ def analyse(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    net = network.CaffeNet(architecture, weights)
+    if test_model.checkpoint != "":
+        net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
+    else:
+        net = network.CaffeNet(architecture, weights)
 
     predictions, _ =  predictions_from_features(net, img_path, [])
     basic_predictions = get_top_predictions(predictions, -1, labels)
@@ -237,8 +258,6 @@ def analyse(request, model, image):
             break
 
     mfRequired = {'features': selection, 'predictions': top_predictions}
-
-
 
     # Find minimal to change
     selection = []
