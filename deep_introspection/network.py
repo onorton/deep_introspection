@@ -91,5 +91,8 @@ class TensorFlowNet:
 
         return prob
 
-    def get_layer_names(self) :
-        pass
+    def get_layer_names(self):
+        layer_names = ['data']
+        layer_names += list(map(lambda x: x.name, filter(lambda x: x.type == 'Conv2D' or x.type=='MatMul' or x.type=='MaxPool' or x.type=='AvgPool', self.sess.graph.get_operations())))
+        layer_names = list(map(lambda x: x.split('/')[0], layer_names))
+        return layer_names
