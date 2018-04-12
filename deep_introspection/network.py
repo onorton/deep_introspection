@@ -70,7 +70,7 @@ class TensorFlowNet:
         weights = self.sess.graph.get_tensor_by_name(layer+'/weights:0')
         weights = weights.eval(session=self.sess)
         if len(weights.shape) == 4:
-            return weights.transpose(3,0,1,2)
+            return weights.transpose(3, 2, 1, 0)
         return weights.transpose()
 
     def get_activations(self, layer):
@@ -124,7 +124,6 @@ class TensorFlowNet:
         return prob
 
     def get_layer_names(self):
-        layer_names = ['data']
-        layer_names += list(map(lambda x: x.name, filter(lambda x: x.type == 'Conv2D' or x.type=='MatMul' or x.type=='MaxPool' or x.type=='AvgPool', self.sess.graph.get_operations())))
+        layer_names = list(map(lambda x: x.name, filter(lambda x: x.type == 'Conv2D' or x.type=='MatMul' or x.type=='MaxPool' or x.type=='AvgPool' or x.type=='Placeholder', self.sess.graph.get_operations())))
         layer_names = list(map(lambda x: x.split('/')[0], layer_names))
         return layer_names

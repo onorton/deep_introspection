@@ -41,6 +41,11 @@ def test_caffe_retrieves_kernel_size():
     assert(net.get_kernel_size('pool5') == 2)
 
 def test_tf_conv_weights_correct_shape():
+    weights = tfNet.get_weights('conv5_3')
+    print(weights.shape)
+    assert(weights.shape==(512,512,3,3))
+
+def test_tf_conv_weights_correct_shape_2():
     weights = tfNet.get_weights('conv1_1')
     assert(weights.shape==(64,3,3,3))
 
@@ -65,7 +70,8 @@ def test_tf_retrieves_fc_layer_type():
 
 def test_tf_layers_found_should_be_in_order():
     layer_names = tfNet.get_layer_names()
-    assert(layer_names == ['data','conv1_1','conv1_2','pool1','conv2_1','conv2_2','pool2','conv3_1','conv3_2','conv3_3','pool3','conv4_1','conv4_2','conv4_3','pool4','conv5_1','conv5_2','conv5_3','pool4_1','fc1','fc2','fc3'])
+    print(layer_names)
+    assert(layer_names == ['Placeholder','conv1_1','conv1_2','pool1','conv2_1','conv2_2','pool2','conv3_1','conv3_2','conv3_3','pool3','conv4_1','conv4_2','conv4_3','pool4','conv5_1','conv5_2','conv5_3','pool4_1','fc1','fc2','fc3'])
 
 def test_tf_conv_activations_correct_shape():
     tfNet.predict(img1)

@@ -2,9 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
+import os
+
 from apps.features.models import FeatureSet
 from apps.uploadModel.models import TestModel
 from apps.uploadImage.models import TestImage
+
+from scipy.misc import imread, imresize
 
 from deep_introspection import lrp, utils, features, network
 
@@ -73,12 +77,17 @@ def index(request, model, image):
         architecture = str(test_model.architecture)
         weights = str(test_model.weights)
 
-        net = network.CaffeNet(architecture, weights)
 
-        img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
-        net.set_new_size(newSize)
+        if test_model.checkpoint != "":
+            net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
+            img = imread(img_path, mode='RGB')
+            img = imresize(img, (224, 224))
+        else:
+            net = network.CaffeNet(architecture, weights)
+            img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
+            net.set_new_size(newSize)
 
-        relevances = lrp.calculate_lrp_heatmap(net, img, architecture)
+        relevances = lrp.calculate_lrp_heatmap(net, img)
         clusters = features.extract_features_from_relevances(relevances)
         write_clusters(features_path, clusters)
         overlay_shape = (img.shape[0],img.shape[1],4)

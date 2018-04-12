@@ -159,7 +159,7 @@ def backwardMax(s, x, k):
     dX = dX.reshape(x.shape)
     return dX
 
-def calculate_lrp_heatmap(net, img, architecture):
+def calculate_lrp_heatmap(net, img):
     """Calculates the layer-wise relevance propagations for a given network and image
     inputs
     net: relevances of higher layer
@@ -180,7 +180,7 @@ def calculate_lrp_heatmap(net, img, architecture):
     layer_names = net.get_layer_names()
     layer_names.reverse()
 
-    for index in range(len(layer_names)-1) :
+    for index in range(len(layer_names)-1):
         name = layer_names[index]
         next_layer = layer_names[index+1]
         layer_type = net.get_layer_type(name)
@@ -194,7 +194,7 @@ def calculate_lrp_heatmap(net, img, architecture):
                 relevances = propagate_fully_to_conv(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha)
             else:
                 relevances = propagate_fully_connected(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha) # relevances of fc6
-        elif layer_type == 'Convolution' and next_layer == 'data':
+        elif layer_type == 'Convolution' and next_layer == 'data' or next_layer == 'Placeholder':
             relevances = propagate_first_conv(net, relevances, net.get_activations(next_layer), name, h, l)
         elif layer_type == 'Convolution':
             relevances =  propagate_conv(net, relevances, net.get_activations(next_layer), name, alpha)
