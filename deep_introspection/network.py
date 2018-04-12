@@ -78,7 +78,7 @@ class TensorFlowNet:
         pass
 
     def get_kernel_size(self, layer):
-        pass
+        return [int(a) for a in list(filter(lambda n: n.name == layer, self.sess.graph.as_graph_def().node))[0].attr['ksize'].list.i][1]
 
     def predict(self, img):
         placeholder = list(filter(lambda x: x.type == 'Placeholder', self.sess.graph.get_operations()))[0]

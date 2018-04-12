@@ -50,3 +50,6 @@ def test_tf_fc_weights_correct_shape():
 
 def test_tf_predictions_sensible():
     assert(tfNet.predict(img1).shape == (1, 1000))
+
+def test_tf_retrieves_kernel_size():
+    assert(tfNet.get_kernel_size('pool4') == 2)
