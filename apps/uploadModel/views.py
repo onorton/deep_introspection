@@ -17,8 +17,27 @@ def tryint(s):
 def alphanum_key(s):
     return [tryint(c) for c in re.split('([0-9]+)', s)]
 
+
+
 @csrf_exempt
 def index(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+
+    if request.method == 'GET':
+        if TestModel.objects.filter(user=id).first() != None:
+            models = TestModel.objects.filter(user=id)
+            models = json.dumps(list(map(lambda model: {"name": model.name, "id" : model.id}, models)))
+            return HttpResponse("{\"models\": " + models + ", \"message\": \"Model successfully retrieved.\"}")
+        else:
+            return HttpResponse("{\"models\": null, \"message\": \"No model exists.\"}", status=404)
+
+
+    return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
+
+@csrf_exempt
+def ca_weights(request):
     if request.user.id ==  None:
         return HttpResponse("{}",status=401)
     id = request.user.id
@@ -48,21 +67,42 @@ def index(request):
             return HttpResponse("{\"name\": \"" + name + "\", \"id\": " + str(model.id) + ",\"message\": \"Model successfully uploaded.\"}")
         save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
-    elif request.method == 'GET':
-        if TestModel.objects.filter(user=id).first() != None:
-            models = TestModel.objects.filter(user=id)
-            models = json.dumps(list(map(lambda model: {"name": model.name, "id" : model.id}, models)))
-            return HttpResponse("{\"models\": " + models + ", \"message\": \"Model successfully retrieved.\"}")
-        else:
-            return HttpResponse("{\"models\": null, \"message\": \"No model exists.\"}", status=404)
-
-
-    return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
-
-
 
 @csrf_exempt
-def architecture(request):
+def tf_data(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        directory =  str(id) + '_' + name
+        filename = directory + '/' + body['filename']
+        if body['blobNum'] == -1:
+            # Combine all parts of the file together
+            files = glob.glob('models/'+filename+'.*')
+            files.sort(key=alphanum_key)
+
+            with open('models/'+filename, "ab") as mainFile:
+                for partName in files:
+                    with open(partName, "rb") as partFile:
+                        mainFile.write(partFile.read())
+
+            # Clean up parts
+            for partName in files:
+                os.remove(partName)
+
+            # Add weights file to model
+            model = TestModel.objects.filter(name=name, user=id).first()
+            model.weights = 'models/'+filename
+            model.save()
+            return HttpResponse("{\"name\": \"" + name + "\", \"id\": " + str(model.id) + ",\"message\": \"Model successfully uploaded.\"}")
+        save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
+        return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
+
+@csrf_exempt
+def ca_architecture(request):
     if request.user.id ==  None:
         return HttpResponse("{}",status=401)
     id = request.user.id
@@ -82,14 +122,92 @@ def architecture(request):
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
 
 @csrf_exempt
-def labels(request):
+def tf_architecture(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        directory =  str(id) + '_' + name
+        filename = directory + '/' + body['filename']
+        if body['blobNum'] == -1:
+            # Combine all parts of the file together
+            files = glob.glob('models/'+filename+'.*')
+            files.sort(key=alphanum_key)
+
+            with open('models/'+filename, "ab") as mainFile:
+                for partName in files:
+                    with open(partName, "rb") as partFile:
+                        mainFile.write(partFile.read())
+
+            # Clean up parts
+            for partName in files:
+                os.remove(partName)
+
+            model = TestModel.objects.filter(name=name, user=id).first()
+            return HttpResponse("{\"name\": \"" + name + "\", \"id\": " + str(model.id) + ",\"message\": \"Model MetaGraph successfully uploaded.\"}")
+
+        if body['blobNum'] == 0:
+            # Check if model already exists
+            if TestModel.objects.filter(name=name, user=id).count() != 0:
+                return HttpResponse("{}",status=409)
+
+            model = TestModel(name=name, architecture='models/'+filename, user=id)
+            model.save()
+            os.makedirs('models/'+directory)
+
+        save_file('models/'+filename+'.'+str(body['blobNum']), body['part'])
+        return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
+
+
+
+@csrf_exempt
+def tf_index_checkpoint(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        directory = str(id) + '_' + name
+
+        index_name = directory +'/' + body['index_filename']
+        checkpoint_name = directory + '/' + body['checkpoint_filename']
+
+        save_file('models/'+index_name, body['index_file'])
+        save_file('models/'+checkpoint_name, body['checkpoint'])
+
+        return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Index and checkpoint successfully uploaded.\"}")
+
+@csrf_exempt
+def tf_labels(request):
     if request.user.id ==  None:
         return HttpResponse("{}",status=401)
     id = request.user.id
     if request.method == 'POST':
         body = json.loads(request.body.decode("utf-8"))
         name = body['name']
-        filename = str(id) + '_' + name + '_labels.txt'
+        directory = str(id) + '_' + name
+        filename = directory + '/' + body['filename']
+        save_file('models/'+filename, body['file'])
+        model = TestModel.objects.filter(name=name, user=id).first()
+        model.labels = 'models/'+filename
+        model.save()
+        return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Labels successfully uploaded.\"}")
+    return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
+
+@csrf_exempt
+def ca_labels(request):
+    if request.user.id ==  None:
+        return HttpResponse("{}",status=401)
+    id = request.user.id
+    if request.method == 'POST':
+        body = json.loads(request.body.decode("utf-8"))
+        name = body['name']
+        filename = str(id) + '_' + name +'_labels.txt'
         save_file('models/'+filename, body['file'])
         model = TestModel.objects.filter(name=name, user=id).first()
         model.labels = 'models/'+filename

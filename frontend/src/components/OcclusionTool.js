@@ -34,7 +34,7 @@ export default class OcclusionTool extends Component {
       if (response.status == 200) {
         response.json().then(function(data) {
           const features = data.features.map(function(feature) {return {feature: feature, active: true}})
-          tool.setState({features: features}, () => tool.fetchPredictions())
+          tool.setState({features: features, image:data.image}, () => tool.fetchPredictions())
         })
       }
 

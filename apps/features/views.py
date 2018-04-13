@@ -2,13 +2,15 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
+import os
+
 from apps.features.models import FeatureSet
 from apps.uploadModel.models import TestModel
 from apps.uploadImage.models import TestImage
 
-from deep_introspection import lrp
-from deep_introspection import utils
-from deep_introspection import features
+from scipy.misc import imread, imresize
+
+from deep_introspection import lrp, utils, features, network
 
 import caffe
 import numpy as np
@@ -43,22 +45,36 @@ def get_top_predictions(predictions, num, labels):
 
 def predictions_from_features(net, img_path, inactive_features):
 
-    img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
-    net.image_dims = newSize
 
-    random_nums = 256*np.random.uniform(size=img.shape)
+    if isinstance(net, network.TensorFlowNet):
+        img = imread(img_path, mode='RGB')
+        img = imresize(img, (224, 224))
 
-    mean = np.array([103.939, 116.779, 123.68])
+        random_nums = 256*np.random.uniform(size=img.shape)
 
-    for index in inactive_features:
-        img[index] = random_nums[index]-mean[2-index[2]]
+        for index in inactive_features:
+            img[index] = random_nums[index]
 
-    net.predict([img],oversample=True)
-    predictions = np.mean(net.blobs['prob'].data, axis=0)
+        predictions = net.predict(img)
+        predictions = np.mean(predictions, axis=0)
 
-    img[:, :, 0] += mean[2]
-    img[:, :, 1] += mean[1]
-    img[:, :, 2] += mean[0]
+    else:
+        img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
+        net.set_new_size(newSize)
+
+        random_nums = 256*np.random.uniform(size=img.shape)
+
+        mean = np.array([103.939, 116.779, 123.68])
+
+        for index in inactive_features:
+            img[index] = random_nums[index]-mean[2-index[2]]
+
+        predictions = net.predict(img)
+        predictions = np.mean(predictions, axis=0)
+
+        img[:, :, 0] += mean[2]
+        img[:, :, 1] += mean[1]
+        img[:, :, 2] += mean[0]
 
 
     return predictions, img
@@ -67,6 +83,9 @@ def predictions_from_features(net, img_path, inactive_features):
 def index(request, model, image):
     features_path = 'features/model_'+ str(model) + '_image_' + str(image) + '.dat'
     feature_set = FeatureSet.objects.filter(model__id=model,image__id=image).first()
+
+    unmodified_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_.jpg'
+
     if feature_set == None:
         # carry out LRP and clustering and write to file
 
@@ -76,11 +95,23 @@ def index(request, model, image):
         architecture = str(test_model.architecture)
         weights = str(test_model.weights)
 
-        net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
+        if architecture.split(".")[-1].lower() == "meta":
+            net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
+            img = imread(img_path, mode='RGB')
+            img = imresize(img, (224, 224))
+            im = Image.fromarray(np.uint8(img))
+            im.save(unmodified_path)
 
-        img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
-        net.image_dims = newSize
-        relevances = lrp.calculate_lrp_heatmap(net, img, architecture)
+        else:
+            net = network.CaffeNet(architecture, weights)
+            img = imread(img_path,mode='RGB')
+            img = 256*utils.imageResize(img)
+            img = Image.fromarray(np.uint8(img))
+            img.save(unmodified_path)
+            img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
+            net.set_new_size(newSize)
+
+        relevances = lrp.calculate_lrp_heatmap(net, img)
         clusters = features.extract_features_from_relevances(relevances)
         write_clusters(features_path, clusters)
         overlay_shape = (img.shape[0],img.shape[1],4)
@@ -99,7 +130,7 @@ def index(request, model, image):
     # Get number of features and return features
     with open(features_path) as f:
         num_features = sum(1 for _ in f)
-        return HttpResponse("{\"features\":" + json.dumps(list(range(num_features))) + ", \"message\": \"features successfully retrieved.\"}")
+        return HttpResponse("{\"features\":" + json.dumps(list(range(num_features))) + ", \"image\": \""  + 'media/'+unmodified_path  + "\",\"message\": \"features successfully retrieved.\"}")
 
 @csrf_exempt
 def evaluate(request, model, image):
@@ -118,7 +149,10 @@ def evaluate(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
+    if architecture.split(".")[-1].lower() == "meta":
+        net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
+    else:
+        net = network.CaffeNet(architecture, weights)
 
     predictions, img = predictions_from_features(net, img_path, inactive_features)
     top_predictions = get_top_predictions(predictions, 5, labels)
@@ -142,7 +176,10 @@ def analyse(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
+    if architecture.split(".")[-1].lower() == "meta":
+        net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
+    else:
+        net = network.CaffeNet(architecture, weights)
 
     predictions, _ =  predictions_from_features(net, img_path, [])
     basic_predictions = get_top_predictions(predictions, -1, labels)
@@ -230,8 +267,6 @@ def analyse(request, model, image):
             break
 
     mfRequired = {'features': selection, 'predictions': top_predictions}
-
-
 
     # Find minimal to change
     selection = []
