@@ -37,7 +37,7 @@ def index(request):
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
 
 @csrf_exempt
-def weights(request):
+def ca_weights(request):
     if request.user.id ==  None:
         return HttpResponse("{}",status=401)
     id = request.user.id
@@ -102,7 +102,7 @@ def tf_data(request):
         return HttpResponse("{\"filename\": \"" + name + "\", \"message\": \"Part successfully uploaded.\"}")
 
 @csrf_exempt
-def architecture(request):
+def ca_architecture(request):
     if request.user.id ==  None:
         return HttpResponse("{}",status=401)
     id = request.user.id
@@ -200,7 +200,7 @@ def tf_labels(request):
     return HttpResponse("{\"message\": \"Invalid method.\"}", status=405)
 
 @csrf_exempt
-def labels(request):
+def ca_labels(request):
     if request.user.id ==  None:
         return HttpResponse("{}",status=401)
     id = request.user.id
