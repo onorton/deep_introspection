@@ -95,8 +95,7 @@ def index(request, model, image):
         architecture = str(test_model.architecture)
         weights = str(test_model.weights)
 
-
-        if test_model.checkpoint != "":
+        if architecture.split(".")[-1].lower() == "meta":
             net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
             img = imread(img_path, mode='RGB')
             img = imresize(img, (224, 224))
@@ -150,7 +149,7 @@ def evaluate(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    if test_model.checkpoint != "":
+    if architecture.split(".")[-1].lower() == "meta":
         net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
     else:
         net = network.CaffeNet(architecture, weights)
@@ -177,7 +176,7 @@ def analyse(request, model, image):
     weights = str(test_model.weights)
     labels = str(test_model.labels)
 
-    if test_model.checkpoint != "":
+    if architecture.split(".")[-1].lower() == "meta":
         net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
     else:
         net = network.CaffeNet(architecture, weights)

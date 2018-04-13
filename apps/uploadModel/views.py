@@ -177,15 +177,9 @@ def tf_index_checkpoint(request):
         index_name = directory +'/' + body['index_filename']
         checkpoint_name = directory + '/' + body['checkpoint_filename']
 
-        model = TestModel.objects.filter(name=name, user=id).first()
-
         save_file('models/'+index_name, body['index_file'])
-        model.index_file = 'models/'+index_name
-
         save_file('models/'+checkpoint_name, body['checkpoint'])
-        model.checkpoint = 'models/'+checkpoint_name
 
-        model.save()
         return HttpResponse("{\"name\": \"" + name + "\", \"message\": \"Index and checkpoint successfully uploaded.\"}")
 
 @csrf_exempt
