@@ -68,6 +68,9 @@ class TensorFlowNet:
         new_saver = tf.train.import_meta_graph(meta)
         new_saver.restore(self.sess, tf.train.latest_checkpoint(dir))
 
+    def __del__(self):
+        self.sess.close()
+        
     def get_weights(self, layer):
         weights = self.sess.graph.get_tensor_by_name(layer+'/weights:0')
         weights = weights.eval(session=self.sess)
