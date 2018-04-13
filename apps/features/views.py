@@ -83,6 +83,9 @@ def predictions_from_features(net, img_path, inactive_features):
 def index(request, model, image):
     features_path = 'features/model_'+ str(model) + '_image_' + str(image) + '.dat'
     feature_set = FeatureSet.objects.filter(model__id=model,image__id=image).first()
+
+    unmodified_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_.jpg'
+
     if feature_set == None:
         # carry out LRP and clustering and write to file
 
@@ -97,8 +100,15 @@ def index(request, model, image):
             net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
             img = imread(img_path, mode='RGB')
             img = imresize(img, (224, 224))
+            im = Image.fromarray(np.uint8(img))
+            im.save(unmodified_path)
+
         else:
             net = network.CaffeNet(architecture, weights)
+            img = imread(img_path,mode='RGB')
+            img = 256*utils.imageResize(img)
+            img = Image.fromarray(np.uint8(img))
+            img.save(unmodified_path)
             img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
             net.set_new_size(newSize)
 
@@ -121,7 +131,7 @@ def index(request, model, image):
     # Get number of features and return features
     with open(features_path) as f:
         num_features = sum(1 for _ in f)
-        return HttpResponse("{\"features\":" + json.dumps(list(range(num_features))) + ", \"message\": \"features successfully retrieved.\"}")
+        return HttpResponse("{\"features\":" + json.dumps(list(range(num_features))) + ", \"image\": \""  + 'media/'+unmodified_path  + "\",\"message\": \"features successfully retrieved.\"}")
 
 @csrf_exempt
 def evaluate(request, model, image):
