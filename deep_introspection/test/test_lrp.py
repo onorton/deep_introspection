@@ -28,6 +28,6 @@ def test_lrp_image():
 
     img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
     net.set_new_size(newSize)
-    relevances = lrp.calculate_lrp_heatmap(net, img,'deep_introspection/test/VGG.prototxt')
+    relevances = lrp.calculate_lrp_heatmap(net, img)
 
     assert(relevances.shape == (224,224))

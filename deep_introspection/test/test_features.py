@@ -18,7 +18,7 @@ def test_captures_disctinct_features():
 
     img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
     net.image_dims = newSize
-    relevances = lrp.calculate_lrp_heatmap(net, img,'deep_introspection/test/VGG.prototxt')
+    relevances = lrp.calculate_lrp_heatmap(net, img)
 
     clusters = features.extract_features_from_relevances(relevances)
 
