@@ -194,7 +194,7 @@ def calculate_lrp_heatmap(net, img):
                 relevances = propagate_fully_to_conv(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha)
             else:
                 relevances = propagate_fully_connected(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha) # relevances of fc6
-        elif layer_type == 'Convolution' and next_layer == 'data' or next_layer == 'Placeholder':
+        elif layer_type == 'Convolution' and net.get_layer_type(next_layer) == 'Input':
             relevances = propagate_first_conv(net, relevances, net.get_activations(next_layer), name, h, l)
         elif layer_type == 'Convolution':
             relevances =  propagate_conv(net, relevances, net.get_activations(next_layer), name, alpha)

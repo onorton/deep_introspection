@@ -37,6 +37,9 @@ def test_caffe_layers_found_should_be_in_order():
 def test_caffe_retrieves_layer_type():
     assert(net.get_layer_type('pool5') == 'Pooling')
 
+def test_caffe_retrieves_input_layer_type():
+    assert(net.get_layer_type('data') == 'Input')
+
 def test_caffe_retrieves_kernel_size():
     assert(net.get_kernel_size('pool5') == 2)
 
@@ -60,7 +63,7 @@ def test_tf_retrieves_kernel_size():
     assert(tfNet.get_kernel_size('pool4') == 2)
 
 def test_tf_retrieves_pooling_layer_type():
-    assert(tfNet.get_layer_type('pool5') == 'Pooling')
+    assert(tfNet.get_layer_type('pool4_1') == 'Pooling')
 
 def test_tf_retrieves_convolution_layer_type():
     assert(tfNet.get_layer_type('conv1_1') == 'Convolution')
@@ -68,9 +71,11 @@ def test_tf_retrieves_convolution_layer_type():
 def test_tf_retrieves_fc_layer_type():
     assert(tfNet.get_layer_type('fc1') == 'InnerProduct')
 
+def test_caffe_retrieves_input_layer_type():
+    assert(tfNet.get_layer_type('Placeholder') == 'Input')
+
 def test_tf_layers_found_should_be_in_order():
     layer_names = tfNet.get_layer_names()
-    print(layer_names)
     assert(layer_names == ['Placeholder','conv1_1','conv1_2','pool1','conv2_1','conv2_2','pool2','conv3_1','conv3_2','conv3_3','pool3','conv4_1','conv4_2','conv4_3','pool4','conv5_1','conv5_2','conv5_3','pool4_1','fc1','fc2','fc3'])
 
 def test_tf_conv_activations_correct_shape():

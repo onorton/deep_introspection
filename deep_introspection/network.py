@@ -26,6 +26,8 @@ class CaffeNet:
         return self.net.blobs[layer].data[0]
 
     def get_layer_type(self, layer):
+        if layer == 'data':
+            return "Input"
         return self.net.layers[list(self.net._layer_names).index(layer)].type
 
     def get_kernel_size(self, layer):
@@ -105,7 +107,10 @@ class TensorFlowNet:
                 self.sess.graph.get_operation_by_name(layer+'/MatMul')
                 return "InnerProduct"
             except:
-                return "Pooling"
+                if self.sess.graph.get_operation_by_name(layer).type == 'Placeholder':
+                    return "Input"
+                else:
+                    return "Pooling"
 
 
     def get_kernel_size(self, layer):
