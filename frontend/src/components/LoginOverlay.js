@@ -35,6 +35,8 @@ export default class LoginOverlay extends Component {
           loginOverlay.props.callbackParent(data.user)
           loginOverlay.setState({isOpen:false});
         })
+      } else {
+        loginOverlay.setState({isOpen:true})
       }
 
     }).catch(function(error) {
