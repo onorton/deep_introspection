@@ -25,7 +25,7 @@ export default class OcclusionTool extends Component {
 
   fetchFeatures(model, image) {
     const tool = this
-    fetch('http://127.0.0.1:8000/features/' + model + '/' + image, {
+    fetch('/features/' + model + '/' + image, {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
@@ -53,7 +53,7 @@ export default class OcclusionTool extends Component {
     const features = this.state.features
     const tool = this
     const inactiveFeatures = features.filter(feature => !feature.active).map(feature => feature.feature)
-    fetch('http://127.0.0.1:8000/features/evaluate/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
+    fetch('/features/evaluate/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
       method: 'POST',
       body: JSON.stringify({inactiveFeatures: inactiveFeatures}),
       headers: {
@@ -74,7 +74,7 @@ export default class OcclusionTool extends Component {
 
   analyse() {
     const tool = this
-    fetch('http://127.0.0.1:8000/features/analyse/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
+    fetch('/features/analyse/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"

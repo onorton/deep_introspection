@@ -30,7 +30,7 @@ export default class ModelCollection extends Component {
 
   fetchModels(user) {
     const collection = this
-    fetch('http://127.0.0.1:8000/uploadModel/', {
+    fetch('/uploadModel/', {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"

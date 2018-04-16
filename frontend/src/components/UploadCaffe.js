@@ -69,7 +69,7 @@ export default class UploadCaffe extends Component {
       reader.readAsDataURL(overlay.state.model.slice(i*blobSize,(i+1)*blobSize));
       reader.onload = function () {
       // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/caffe/weights/', {
+      fetch('/uploadModel/caffe/weights/', {
         method: 'POST',
         body: JSON.stringify({name: modelName, filename: overlay.state.model.name, part: reader.result, blobNum: i}),
         headers: {
@@ -81,7 +81,7 @@ export default class UploadCaffe extends Component {
         overlay.props.updateProgress(100*(numBlobs-count)/numBlobs)
         // send message to server letting it know all the data has been sent.
         if (count == 0) {
-          fetch('http://127.0.0.1:8000/uploadModel/caffe/weights/', {
+          fetch('/uploadModel/caffe/weights/', {
             method: 'POST',
             body: JSON.stringify({name: modelName,  filename: overlay.state.model.name, blobNum: -1}),
             headers: {
@@ -132,7 +132,7 @@ export default class UploadCaffe extends Component {
       architectureReader.readAsDataURL(overlay.state.architecture);
       architectureReader.onload = function () {
       // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/caffe/architecture/', {
+      fetch('/uploadModel/caffe/architecture/', {
         method: 'POST',
         body: JSON.stringify({name: modelName, filename: overlay.state.architecture.name, file: architectureReader.result}),
         headers: {
@@ -147,7 +147,7 @@ export default class UploadCaffe extends Component {
             labelsReader.readAsDataURL(overlay.state.labels);
             labelsReader.onload = function () {
           // If successfully read file, save on file system
-          fetch('http://127.0.0.1:8000/uploadModel/caffe/labels/', {
+          fetch('/uploadModel/caffe/labels/', {
             method: 'POST',
             body: JSON.stringify({name: modelName, filename:  overlay.state.labels.name, file: labelsReader.result}),
             headers: {

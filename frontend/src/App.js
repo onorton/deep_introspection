@@ -31,7 +31,7 @@ class App extends Component {
 
   logout() {
     const app = this
-    fetch('http://127.0.0.1:8000/accounts/logout', {
+    fetch('/accounts/logout', {
       method: 'POST',
       headers: {
           "Content-Type": "application/json"

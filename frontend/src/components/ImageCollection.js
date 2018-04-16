@@ -26,7 +26,7 @@ export default class ImageCollection extends Component {
 
   fetchImages(user) {
     const collection = this
-    fetch('http://127.0.0.1:8000/uploadImage/', {
+    fetch('/uploadImage/', {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
@@ -80,7 +80,7 @@ export default class ImageCollection extends Component {
     reader.onload = function () {
       // If successfully read image, save on file system
 
-      fetch('http://127.0.0.1:8000/uploadImage/', {
+      fetch('/uploadImage/', {
         method: 'POST',
         body: JSON.stringify({name: name, image: reader.result}),
         headers: {
@@ -92,7 +92,7 @@ export default class ImageCollection extends Component {
 
         if (response.status == 200) {
           response.json().then(function(data) {
-            urls.push({id: data.id, url: 'http://127.0.0.1:8000/media/images/' + data.filename});
+            urls.push({id: data.id, url: '/media/images/' + data.filename});
             collection.setState({images: urls})
             if(collection.state.images.length == 1) {
               collection.select(0);
