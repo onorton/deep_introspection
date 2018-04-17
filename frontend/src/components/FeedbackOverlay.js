@@ -9,7 +9,6 @@ export default class FeedbackOverlay extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      set: false,
       othersModified: false,
       occlusionSupported: true,
       occlusionSupport: null,
@@ -55,7 +54,7 @@ export default class FeedbackOverlay extends Component {
   submit() {
     fetch('/evaluation/', {
       method: 'POST',
-      body: JSON.stringify({image: this.props.image.id, model:this.props.model.id, general: this.state.general}),
+      body: JSON.stringify({image: this.props.image.id, model:this.props.model.id, state: this.state}),
       headers: {
           "Content-Type": "application/json"
       },
@@ -71,12 +70,17 @@ export default class FeedbackOverlay extends Component {
     }).catch(function(error) {
       MainToaster.show({ timeout:5000, intent: Intent.DANGER, message: "There was an issue in submitting your feedback." });
     });
-    this.props.onClose()
+    this.setState({othersModified: false, occlusionUseful: 3, occlusionSpeed: 3, occlusionSupport: null, occlusionSupported: true,  occlusionFeatures: '',
+      occlusionComments: '',
+      general: ''}, this.props.onClose())
+
   }
   render() {
     return (
           <Dialog isOpen={this.props.isOpen} title="Feedback"
-            onClose={() => this.setState({set: false, othersModified: false}, this.props.onClose())}
+            onClose={() =>    this.setState({othersModified: false, occlusionUseful: 3, occlusionSpeed: 3, occlusionSupport: null, occlusionSupported: true,  occlusionFeatures: '',
+              occlusionComments: '',
+              general: ''}, this.props.onClose())}
             style={{backgroundColor:"#F5F8FA"}}
             canEscapeClose={true}
             canOutsideClickClose={true}
