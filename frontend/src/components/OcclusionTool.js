@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import OcclusionResult from './OcclusionResult'
 import Predictions from './Predictions'
 import { Tooltip, Position } from  "@blueprintjs/core";
+import FeedbackOverlay from './FeedbackOverlay'
+
 export default class OcclusionTool extends Component {
 
   constructor(props) {
@@ -11,7 +13,8 @@ export default class OcclusionTool extends Component {
       predictions: [],
       image: null,
       hover: null,
-      results: null
+      results: null,
+      feedback: false
     };
   }
   getDerivedStateFromProps(nextProps, prevState) {
@@ -99,7 +102,7 @@ export default class OcclusionTool extends Component {
     <div className="toolArea">
     <div className="buttonArea" style={{width:'100%', height:40}}>
     <Tooltip style={{width:200}} content="Analyses model and image with various metrics. May take several minutes." position={Position.TOP}>
-      <label className="pt-button pt-active pt-intent-primary " onClick={() => {this.analyse()}}>Analyse</label>
+      <label className="pt-button pt-intent-primary pt-large " onClick={() => {this.analyse()}}>Analyse</label>
     </Tooltip>
     </div>
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
@@ -119,12 +122,14 @@ export default class OcclusionTool extends Component {
     <Predictions predictions={this.state.predictions}/>
     </div>
 
-    {(this.state.results != null) ? <OcclusionResult
+    {(this.state.results != null) ?<div><OcclusionResult
       features={this.state.features.map(function(feature) {return feature.feature})}
       testModel={this.props.testModel}
       testImage={this.props.testImage}
       style={{width: 750, marginLeft:'auto',marginRight:'auto'}}
       results={this.state.results}/>
+      <FeedbackOverlay isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} onClose={() => this.setState({feedback:false})}/>
+      <label className="pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label></div>
       : <div/>}
     </div>
     )

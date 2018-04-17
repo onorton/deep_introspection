@@ -58,8 +58,10 @@ export default class FeedbackOverlay extends Component {
             canOutsideClickClose={true}
             isCloseButtonShown={true}>
 
-              <div className="pt-dialog-body">
-              <form style={{padding:10}}>
+              <div style={{padding:10}} className="pt-dialog-body">
+              If you want to submit feedback on how the tools analyse your current model and image selection, you can do so here. You can also submit any general feedback on the application itself.
+              <form>
+              <h5>Occlusion Tool</h5>
               <h5>General Comments</h5>
               If you have any other comments about the application, you can provide them here.<br/>
               <textarea onChange={this.handleInputChange} name="general" class="pt-input pt-fill" dir="auto"></textarea>
