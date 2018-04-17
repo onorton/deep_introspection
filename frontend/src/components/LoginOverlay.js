@@ -21,7 +21,7 @@ export default class LoginOverlay extends Component {
 
   componentWillMount() {
     const loginOverlay = this
-    fetch('http://127.0.0.1:8000/accounts/login', {
+    fetch('/accounts/login', {
       method: 'POST',
       body: JSON.stringify({username: this.state.username, password: this.state.password}),
       headers: {
@@ -35,6 +35,8 @@ export default class LoginOverlay extends Component {
           loginOverlay.props.callbackParent(data.user)
           loginOverlay.setState({isOpen:false});
         })
+      } else {
+        loginOverlay.setState({isOpen:true})
       }
 
     }).catch(function(error) {
@@ -49,7 +51,7 @@ export default class LoginOverlay extends Component {
     const password = loginOverlay.state.password
     loginOverlay.setState({username: '', password: ''})
 
-    fetch('http://127.0.0.1:8000/accounts/login', {
+    fetch('/accounts/login', {
       method: 'POST',
       body: JSON.stringify({username: username, password: password}),
       headers: {
@@ -75,7 +77,7 @@ export default class LoginOverlay extends Component {
   }
   signup() {
     const loginOverlay = this
-    fetch('http://127.0.0.1:8000/accounts/', {
+    fetch('/accounts/', {
       method: 'POST',
       body: JSON.stringify({username: this.state.username, password: this.state.password}),
       headers: {

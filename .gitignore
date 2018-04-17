@@ -70,9 +70,6 @@ webpack-stats.prod.json
 .env.production.local
 
 # development test files
-images/
-models/
-features/
 
 npm-debug.log*
 yarn-debug.log*

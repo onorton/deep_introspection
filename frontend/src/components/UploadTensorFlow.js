@@ -93,7 +93,7 @@ export default class UploadTensorFlow extends Component {
       reader.readAsDataURL(overlay.state.meta.slice(i*blobSize,(i+1)*blobSize));
       reader.onload = function () {
       // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/tensorflow/architecture/', {
+      fetch('/uploadModel/tensorflow/architecture/', {
         method: 'POST',
         body: JSON.stringify({name: modelName, filename: overlay.state.meta.name, part: reader.result, blobNum: i}),
         headers: {
@@ -104,7 +104,7 @@ export default class UploadTensorFlow extends Component {
         count--;
         // send message to server letting it know all the meta has been sent.
         if (count == 0) {
-          fetch('http://127.0.0.1:8000/uploadModel/tensorflow/architecture/', {
+          fetch('/uploadModel/tensorflow/architecture/', {
             method: 'POST',
             body: JSON.stringify({name: modelName,  filename: overlay.state.meta.name, blobNum: -1}),
             headers: {
@@ -151,7 +151,7 @@ export default class UploadTensorFlow extends Component {
       reader.readAsDataURL(overlay.state.data.slice(i*blobSize,(i+1)*blobSize));
       reader.onload = function () {
       // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/tensorflow/data/', {
+      fetch('/uploadModel/tensorflow/data/', {
         method: 'POST',
         body: JSON.stringify({name: modelName, filename: overlay.state.data.name, part: reader.result, blobNum: i}),
         headers: {
@@ -163,7 +163,7 @@ export default class UploadTensorFlow extends Component {
         overlay.props.updateProgress(100*(numBlobs-count)/numBlobs)
         // send message to server letting it know all the data has been sent.
         if (count == 0) {
-          fetch('http://127.0.0.1:8000/uploadModel/tensorflow/data/', {
+          fetch('/uploadModel/tensorflow/data/', {
             method: 'POST',
             body: JSON.stringify({name: modelName,  filename: overlay.state.data.name, blobNum: -1}),
             headers: {
@@ -230,7 +230,7 @@ export default class UploadTensorFlow extends Component {
         checkpointReader.readAsDataURL(overlay.state.checkpoint);
         checkpointReader.onload = function () {
           // If successfully read file, save on file system
-        fetch('http://127.0.0.1:8000/uploadModel/tensorflow/rest/', {
+        fetch('/uploadModel/tensorflow/rest/', {
           method: 'POST',
           body: JSON.stringify({name: modelName, checkpoint_filename:overlay.state.checkpoint.name, index_filename: overlay.state.index.name, checkpoint: checkpointReader.result, index_file: indexReader.result}),
           headers: {
@@ -263,7 +263,7 @@ export default class UploadTensorFlow extends Component {
         labelsReader.readAsDataURL(overlay.state.labels);
         labelsReader.onload = function () {
       // If successfully read file, save on file system
-      fetch('http://127.0.0.1:8000/uploadModel/tensorflow/labels/', {
+      fetch('/uploadModel/tensorflow/labels/', {
         method: 'POST',
         body: JSON.stringify({name: modelName, filename:  overlay.state.labels.name, file: labelsReader.result}),
         headers: {

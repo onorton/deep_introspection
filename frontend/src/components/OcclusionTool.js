@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import OcclusionResult from './OcclusionResult'
 import Predictions from './Predictions'
 import { Tooltip, Position } from  "@blueprintjs/core";
+import OcclusionFeedback from './OcclusionFeedback'
+
 export default class OcclusionTool extends Component {
 
   constructor(props) {
@@ -11,10 +13,11 @@ export default class OcclusionTool extends Component {
       predictions: [],
       image: null,
       hover: null,
-      results: null
+      results: null,
+      feedback: false
     };
   }
-  componentWillReceiveProps(nextProps) {
+  getDerivedStateFromProps(nextProps, prevState) {
     this.setState({image: nextProps.testImage.url, predictions: [], features: [], results: null})
     this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
   }
@@ -25,7 +28,7 @@ export default class OcclusionTool extends Component {
 
   fetchFeatures(model, image) {
     const tool = this
-    fetch('http://127.0.0.1:8000/features/' + model + '/' + image, {
+    fetch('/features/' + model + '/' + image, {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
@@ -53,7 +56,7 @@ export default class OcclusionTool extends Component {
     const features = this.state.features
     const tool = this
     const inactiveFeatures = features.filter(feature => !feature.active).map(feature => feature.feature)
-    fetch('http://127.0.0.1:8000/features/evaluate/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
+    fetch('/features/evaluate/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
       method: 'POST',
       body: JSON.stringify({inactiveFeatures: inactiveFeatures}),
       headers: {
@@ -74,7 +77,7 @@ export default class OcclusionTool extends Component {
 
   analyse() {
     const tool = this
-    fetch('http://127.0.0.1:8000/features/analyse/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
+    fetch('/features/analyse/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
@@ -99,7 +102,7 @@ export default class OcclusionTool extends Component {
     <div className="toolArea">
     <div className="buttonArea" style={{width:'100%', height:40}}>
     <Tooltip style={{width:200}} content="Analyses model and image with various metrics. May take several minutes." position={Position.TOP}>
-      <label className="pt-button pt-active pt-intent-primary " onClick={() => {this.analyse()}}>Analyse</label>
+      <label className="pt-button pt-intent-primary pt-large " onClick={() => {this.analyse()}}>Analyse</label>
     </Tooltip>
     </div>
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
@@ -119,12 +122,14 @@ export default class OcclusionTool extends Component {
     <Predictions predictions={this.state.predictions}/>
     </div>
 
-    {(this.state.results != null) ? <OcclusionResult
+    {(this.state.results != null) ?<div><OcclusionResult
       features={this.state.features.map(function(feature) {return feature.feature})}
       testModel={this.props.testModel}
       testImage={this.props.testImage}
       style={{width: 750, marginLeft:'auto',marginRight:'auto'}}
       results={this.state.results}/>
+      <OcclusionFeedback isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} originalClass={this.state.results.originalClass} onClose={() => this.setState({feedback:false})}/>
+      <label className="pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label></div>
       : <div/>}
     </div>
     )

@@ -26,6 +26,7 @@ urlpatterns = [
     path('uploadModel/', include('apps.uploadModel.urls')),
     path('features/', include('apps.features.urls')),
     path('accounts/', include('apps.accounts.urls')),
+    path('evaluation/', include('apps.evaluation.urls')),
     path('admin/', admin.site.urls),
 ]
 if settings.DEBUG is True:

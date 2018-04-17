@@ -30,7 +30,7 @@ export default class ModelCollection extends Component {
 
   fetchModels(user) {
     const collection = this
-    fetch('http://127.0.0.1:8000/uploadModel/', {
+    fetch('/uploadModel/', {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
@@ -72,7 +72,6 @@ export default class ModelCollection extends Component {
     let selected = this.state.selected;
     let selectedStyle = { outlineColor: '#137CBD', outlineStyle: 'solid',  width: '90%'}
     let modelStyle = {width: '90%'}
-    console.log(this.state.models)
     return (
       <div>
       <UploadModelOverlay isOpen={this.props.user != null && this.state.add} first={this.state.models.length == 0} reset={() => this.setState({add:false})} callbackParent={(model) => this.onModelUploaded(model)}/>
