@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import OcclusionResult from './OcclusionResult'
 import Predictions from './Predictions'
 import { Tooltip, Position } from  "@blueprintjs/core";
-import FeedbackOverlay from './FeedbackOverlay'
+import OcclusionFeedback from './OcclusionFeedback'
 
 export default class OcclusionTool extends Component {
 
@@ -128,7 +128,7 @@ export default class OcclusionTool extends Component {
       testImage={this.props.testImage}
       style={{width: 750, marginLeft:'auto',marginRight:'auto'}}
       results={this.state.results}/>
-      <FeedbackOverlay isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} onClose={() => this.setState({feedback:false})}/>
+      <OcclusionFeedback isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} originalClass={this.state.results.originalClass} onClose={() => this.setState({feedback:false})}/>
       <label className="pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label></div>
       : <div/>}
     </div>
