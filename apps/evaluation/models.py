@@ -8,4 +8,5 @@ class Feedback(models.Model):
     image = models.ForeignKey(TestImage, default=None, on_delete=models.CASCADE)
     user = models.IntegerField(default=0)
     feedback = models.TextField()
+    scope = models.CharField(max_length=255)
     time_submitted = models.DateTimeField(auto_now_add=True)

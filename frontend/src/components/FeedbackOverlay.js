@@ -52,7 +52,7 @@ export default class FeedbackOverlay extends Component {
  }
 
   submit() {
-    fetch('/evaluation/', {
+    fetch('/evaluation/general', {
       method: 'POST',
       body: JSON.stringify({image: this.props.image.id, model:this.props.model.id, state: this.state}),
       headers: {
