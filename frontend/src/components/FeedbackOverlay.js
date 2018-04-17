@@ -14,6 +14,10 @@ export default class FeedbackOverlay extends Component {
     this.handleInputChange = this.handleInputChange.bind(this);
   }
 
+  isEmpty() {
+    return this.state.general == ''
+  }
+
   handleInputChange(event) {
    const target = event.target;
    const value = target.value;
@@ -48,7 +52,7 @@ export default class FeedbackOverlay extends Component {
   render() {
     return (
           <Dialog isOpen={this.props.isOpen} title="Feedback"
-            onClose={() => this.props.onClose()}
+            onClose={() => this.setState({general: ''}, this.props.onClose())}
             style={{backgroundColor:"#F5F8FA"}}
             canEscapeClose={true}
             canOutsideClickClose={true}
@@ -63,7 +67,8 @@ export default class FeedbackOverlay extends Component {
               </div>
               <div className="pt-dialog-footer" >
                              <div className="pt-dialog-footer-actions">
-                             <button type="button" className="pt-button pt-intent-primary" onClick={() => this.submit()}>Submit</button>
+                             {(this.isEmpty()) ? <button type="button" className="pt-button pt-intent-primary pt-disabled">Submit</button>:
+                             <button type="button" className="pt-button pt-intent-primary" onClick={() => this.submit()}>Submit</button>}
                              </div>
                          </div>
           </Dialog>
