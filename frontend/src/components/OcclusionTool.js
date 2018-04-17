@@ -14,7 +14,7 @@ export default class OcclusionTool extends Component {
       results: null
     };
   }
-  componentWillReceiveProps(nextProps) {
+  getDerivedStateFromProps(nextProps, prevState) {
     this.setState({image: nextProps.testImage.url, predictions: [], features: [], results: null})
     this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
   }

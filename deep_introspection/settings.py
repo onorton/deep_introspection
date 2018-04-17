@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.uploadModel',
     'apps.features',
     'apps.accounts',
+    'apps.evaluation',
 
 ]
 WEBPACK_LOADER = {
