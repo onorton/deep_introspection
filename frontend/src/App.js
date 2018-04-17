@@ -17,6 +17,7 @@ class App extends Component {
     this.state = {
       testImage: null,
       testModel: null,
+      feedback: false,
       user: null
     };
   }
@@ -54,14 +55,17 @@ class App extends Component {
           <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
           <label style={{float:'right'}}className="pt-file-upload pt-button pt-icon-log-out pt-intent-primary " onClick={() => {this.logout()}}>Logout</label>
         </header>
-        <LoginOverlay isOpen={this.state.user == null}callbackParent={(user) => this.setState({user:user})}/>
+        <LoginOverlay isOpen={this.state.user == null} callbackParent={(user) => this.setState({user:user})}/>
+        {(this.state.feedback)? <div>Feedback Form</div> : <div/>}
+
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 125, width:"100%" }}>
           {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
         </div>
+        <label style={{position:'absolute', top:'50%', right:-20, transform:'rotate(-90deg)'}}className="pt-file-upload pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label>
         <ModelCollection user={this.state.user} callbackParent={(model) => this.onTestModelChanged(model)} scrollHeight={100} style={{position:'absolute', top:80, left:250, width:200}}/>
         <ImageCollection user={this.state.user} callbackParent={(img) => this.onTestImageChanged(img)} style={{width:250, height:750}}/>
-
       </div>
+
     );
   }
 }
