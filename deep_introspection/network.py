@@ -23,7 +23,7 @@ class CaffeNet:
     def get_activations(self, layer):
         if not self.predicted:
             return None
-        return self.net.blobs[layer].data[0]
+        return np.copy(self.net.blobs[layer].data[0])
 
     def get_layer_type(self, layer):
         if layer == 'data':
@@ -35,9 +35,9 @@ class CaffeNet:
 
 
     def predict(self, img):
-        self.net.predict([img])
         self.predicted = True
-        return self.net.blobs['prob'].data
+        self.net.predict([img])
+        return np.copy(self.net.blobs['prob'].data)
 
     def set_new_size(self, new_size):
         self.net.image_dims = new_size
@@ -58,6 +58,9 @@ class CaffeNet:
 
         return layer_names
 
+    def input_shape(self):
+        return self.get_activations(self.get_layer_names()[0]).transpose(2, 1, 0).shape
+
 class TensorFlowNet:
     sess = None
     img = None
@@ -70,7 +73,7 @@ class TensorFlowNet:
 
     def __del__(self):
         self.sess.close()
-        
+
     def get_weights(self, layer):
         weights = self.sess.graph.get_tensor_by_name(layer+'/weights:0')
         weights = weights.eval(session=self.sess)
