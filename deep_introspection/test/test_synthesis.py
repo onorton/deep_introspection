@@ -17,9 +17,9 @@ def test_synthesise_loss_is_low():
     net.set_new_size(solution.shape[:2])
     net.predict(solution)
 
-    print(synthesis.loss(net.get_activations(layer), target_rep))
-    plt.imshow(solution)
+    plt.imshow(np.maximum(solution, 0)/256)
     plt.show()
-    
+    print(synthesis.loss(net.get_activations(layer), target_rep)/solution.flatten().shape[0])
+
     assert(solution.shape == (224,224,3))
-    assert(synthesis.loss(net.get_activations(layer), target_rep) < 10)
+    assert(synthesis.loss(net.get_activations(layer), target_rep)/solution.flatten().shape[0] < 0.01)
