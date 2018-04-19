@@ -1,5 +1,6 @@
 import numpy as np
 from deep_introspection import lrp
+alpha = 6
 
 def synthesise(net, rep):
     """
@@ -11,24 +12,32 @@ def synthesise(net, rep):
     rep: the representation that is trying to be inverted
     in this case, the layer before the final softmax layer
     output
-    An image as a numpy array
+    An image as a numpy array, total loss
     """
 
-    x = 256*np.random.uniform(size=net.input_shape())
+    x = 256*np.random.uniform(size=net.input_shape())-128
     layer = net.get_layer_names()[-2]
     net.set_new_size(x.shape[:2])
 
-    step_size = 0.00001
+    step_size = 0.1
+    sigma = 0.3
+    l = sigma/(x.shape[0]*x.shape[1]*(128**alpha))
 
-    for i in range(20):
-        net.predict(x)
+    for i in range(300):
+        if i % 100 == 0:
+            step_size /= 10
+        net.predict(sigma*x)
         rep_loss = loss(net.get_activations(layer), rep)
         grad = gradient(net, rep_loss)
-        x -= step_size * grad
         print(rep_loss)
-    return x
+        print(rep_loss+regularised(x))
+        x -= step_size * (grad + l*alpha*x**(alpha-1))
+        #x -= step_size * grad
 
+    return x+128, (rep_loss + regularised(x))
 
+def regularised(x):
+    return np.sum(x**alpha)
 
 def loss(rep, target):
     """
@@ -39,7 +48,7 @@ def loss(rep, target):
     target: the representation to approximate
 
     """
-    return np.linalg.norm(rep-target)**2
+    return np.linalg.norm(rep-target)**2/(np.linalg.norm(target)**2)
 
 
 def gradient(net, out):
