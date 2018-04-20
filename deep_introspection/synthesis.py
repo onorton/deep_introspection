@@ -1,6 +1,11 @@
 import numpy as np
 from deep_introspection import lrp
+import matplotlib.pyplot as plt
+
 alpha = 6
+beta = 2
+l_tv = 10
+l = 8e-10
 
 def synthesise(net, rep):
     """
@@ -19,25 +24,56 @@ def synthesise(net, rep):
     layer = net.get_layer_names()[-2]
     net.set_new_size(x.shape[:2])
 
-    step_size = 0.1
-    sigma = 0.3
-    l = sigma/(x.shape[0]*x.shape[1]*(128**alpha))
+    lr = 0.004*np.ones(400)
+    lr[200:] *= 0.1
 
-    for i in range(300):
-        if i % 100 == 0:
-            step_size /= 10
-        net.predict(sigma*x)
+    for i in range(200):
+        net.predict(x)
         rep_loss = loss(net.get_activations(layer), rep)
         grad = gradient(net, rep_loss)
-        print(rep_loss)
-        print(rep_loss+regularised(x))
-        x -= step_size * (grad + l*alpha*x**(alpha-1))
-        #x -= step_size * grad
+    
+        x -= lr[i] * (grad + l*alpha*x**(alpha-1)+l_tv*tv_grad(x))
 
     return x+128, (rep_loss + regularised(x))
 
 def regularised(x):
-    return np.sum(x**alpha)
+
+    norm = np.sum(x**alpha)
+
+    shift_w = np.zeros(x.shape)
+    shift_w[:-1,:] = x[1:,:]
+    shift_w[-1,:] = x[-1,:]
+
+
+    shift_h = np.zeros(x.shape)
+    shift_h[:,:-1] = x[:,1:]
+    shift_h[:,-1] = x[:,-1]
+
+
+    tv = np.sum((shift_w-x)**2 + (shift_h-x)**2)
+    return l*norm + l_tv*tv
+
+def tv_grad(x):
+
+    shift_w = np.zeros(x.shape)
+    shift_w[:-1,:] = x[1:,:]
+    shift_w[-1,:] = x[-1,:]
+
+    shift_w_back = np.zeros(x.shape)
+    shift_w_back[1:,:] = x[:-1,:]
+    shift_w_back[0,:] = x[0,:]
+
+    shift_h = np.zeros(x.shape)
+    shift_h[:,:-1] = x[:,1:]
+    shift_h[:,-1] = x[:,-1]
+
+    shift_h_back = np.zeros(x.shape)
+    shift_h_back[:,1:] = x[:,:-1]
+    shift_h_back[:,0] = x[:,0]
+
+    grad = -2*(shift_h-x)-2*(shift_w-x)+2*(x-shift_h_back)+2*(x-shift_w_back)
+
+    return grad
 
 def loss(rep, target):
     """
