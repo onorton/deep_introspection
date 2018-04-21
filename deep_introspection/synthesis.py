@@ -25,21 +25,34 @@ def synthesise(net, rep):
     layer = net.get_layer_names()[-2]
     net.set_new_size(x.shape[:2])
 
-    lr = 0.004*np.ones(400)
-    lr[100:] *= 0.1
+    lr = 0.005
     mu = 0
-    for i in range(100):
-        net.predict(x)
-        rep_loss = loss(net.get_activations(layer), rep)
+    prev_x = x
+    net.predict(x)
+    rep_loss = loss(net.get_activations(layer), rep)
+    prev_loss = rep_loss + regularised(x)
+
+    for i in range(10):
+
         grad = gradient(net, rep_loss)
-        print(rep_loss)
-        print(rep_loss+regularised(x))
-        mu = m*mu - lr[i] * (grad + l*alpha*x**(alpha-1)+l_tv*tv_grad(x))
+        #mu = lr * (grad)
+        mu = lr * (grad + l*alpha*x**(alpha-1) + l_tv + tv_grad(x))
+
         x += mu
 
-        if i % 100 == 0 and i > 0:
-            plt.imshow(np.maximum(x+128, 0)/256)
-            plt.show()
+        net.predict(x)
+        rep_loss = loss(net.get_activations(layer), rep)
+        print(lr)
+        print("Total loss: " + str(rep_loss+regularised(x)))
+        print("Loss: " + str(rep_loss))
+
+        if  rep_loss + regularised(x) <= prev_loss:
+            lr *= 2
+            prev_x = x
+            prev_loss = rep_loss + regularised(x)
+        else:
+            lr /= 2
+            x = prev_x
 
     return x+128, (rep_loss + regularised(x))
 
