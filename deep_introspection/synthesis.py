@@ -6,6 +6,7 @@ alpha = 6
 beta = 2
 l_tv = 10
 l = 8e-10
+m = 0.5
 
 def synthesise(net, rep):
     """
@@ -25,14 +26,20 @@ def synthesise(net, rep):
     net.set_new_size(x.shape[:2])
 
     lr = 0.004*np.ones(400)
-    lr[200:] *= 0.1
-
-    for i in range(200):
+    lr[100:] *= 0.1
+    mu = 0
+    for i in range(100):
         net.predict(x)
         rep_loss = loss(net.get_activations(layer), rep)
         grad = gradient(net, rep_loss)
-    
-        x -= lr[i] * (grad + l*alpha*x**(alpha-1)+l_tv*tv_grad(x))
+        print(rep_loss)
+        print(rep_loss+regularised(x))
+        mu = m*mu - lr[i] * (grad + l*alpha*x**(alpha-1)+l_tv*tv_grad(x))
+        x += mu
+
+        if i % 100 == 0 and i > 0:
+            plt.imshow(np.maximum(x+128, 0)/256)
+            plt.show()
 
     return x+128, (rep_loss + regularised(x))
 
@@ -116,4 +123,4 @@ def gradient(net, out):
                 grad = np.matmul(np.transpose(net.get_weights(name)),grad)
         elif layer_type == 'Convolution':
             grad = lrp.backprop(grad, net.get_weights(name), net.get_activations(next_layer))
-    return grad.transpose(1,2,0)
+    return grad.transpose(2,1,0)
