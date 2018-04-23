@@ -25,34 +25,35 @@ def synthesise(net, rep):
     layer = net.get_layer_names()[-2]
     net.set_new_size(x.shape[:2])
 
-    lr = 0.005
+    lr = 0.001
     mu = 0
-    prev_x = x
+    prev_x = np.copy(x)
     net.predict(x)
     rep_loss = loss(net.get_activations(layer), rep)
-    prev_loss = rep_loss + regularised(x)
+    prev_loss = rep_loss
+
+    print("Initial loss: " + str(rep_loss))
 
     for i in range(10):
-
-        grad = gradient(net, rep_loss)
-        #mu = lr * (grad)
-        mu = lr * (grad + l*alpha*x**(alpha-1) + l_tv + tv_grad(x))
+        grad = gradient(net, (rep_loss-rep)/np.linalg.norm(rep))
+        delta = x*grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
+        mu = m*mu + (1-m)*-lr * delta
 
         x += mu
 
         net.predict(x)
         rep_loss = loss(net.get_activations(layer), rep)
-        print(lr)
         print("Total loss: " + str(rep_loss+regularised(x)))
         print("Loss: " + str(rep_loss))
 
-        if  rep_loss + regularised(x) <= prev_loss:
-            lr *= 2
-            prev_x = x
+        if rep_loss + regularised(x) <= prev_loss:
+            if lr < 0.5:
+                lr *= 2
+            prev_x = np.copy(x)
             prev_loss = rep_loss + regularised(x)
         else:
             lr /= 2
-            x = prev_x
+            x = np.copy(prev_x)
 
     return x+128, (rep_loss + regularised(x))
 
@@ -116,7 +117,8 @@ def gradient(net, out):
     layer_names = net.get_layer_names()[:-1]
     layer = net.get_layer_names()[-2]
 
-    grad = (out/net.get_activations(layer).flatten().shape[0])*np.ones(net.get_activations(layer).shape)
+    grad = out
+    #grad = (out/net.get_activations(layer).flatten().shape[0])*np.ones(net.get_activations(layer).shape)
     layer_names.reverse()
 
     for index in range(len(layer_names)-1):
@@ -129,11 +131,12 @@ def gradient(net, out):
             grad = lrp.backwardMax(grad, net.get_activations(next_layer), kernel)
         elif layer_type == 'InnerProduct':
             next_layer_type = net.get_layer_type(next_layer)
+            grad = np.maximum(grad, 0)
             grad = np.matmul(np.transpose(net.get_weights(name)),grad)
             if next_layer_type != 'InnerProduct' :
                 grad = grad.reshape(net.get_activations(next_layer).shape)
-            else:
-                grad = np.matmul(np.transpose(net.get_weights(name)),grad)
         elif layer_type == 'Convolution':
+            grad = np.maximum(grad, 0)
             grad = lrp.backprop(grad, net.get_weights(name), net.get_activations(next_layer))
+
     return grad.transpose(2,1,0)
