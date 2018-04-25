@@ -58,6 +58,9 @@ class CaffeNet:
 
         return layer_names
 
+    def get_biases(self, layer):
+        return self.net.params[layer][1].data
+
     def input_shape(self):
         return self.get_activations(self.get_layer_names()[0]).transpose(2, 1, 0).shape
 
