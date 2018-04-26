@@ -6,7 +6,7 @@ alpha = 6
 beta = 2
 l_tv = 10
 l = 8e-10
-m = 0.5
+m = 0.9
 
 def synthesise(net, target):
     """
@@ -24,33 +24,36 @@ def synthesise(net, target):
     layer = net.get_layer_names()[-2]
     net.set_new_size(x.shape[:2])
 
-    lr = 0.001
+    lr = 0.01
     mu = 0
     prev_x = np.copy(x)
     net.predict(x)
     rep_loss = loss(net.get_activations(layer), target)
+
+    # prev_loss = rep_loss + regularised(x)
     prev_loss = rep_loss + regularised(x)
 
     print("Initial loss: " + str(rep_loss))
-
-    for i in range(100):
-        grad = gradient(net, (net.get_activations(layer)-target))
+    iterations = 400
+    for i in range(iterations):
+        grad = gradient(net, net.get_activations(layer)-target)
         delta = grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
         #delta = grad
         old_mu = np.copy(mu)
-        mu = m*mu + (1-m)*-lr * delta
+        mu = -lr * delta
         x += mu
 
         net.predict(x)
         rep_loss = loss(net.get_activations(layer), target)
+        total_loss = rep_loss + regularised(x)
         print("Iteration " + str(i) +": " + str(lr))
-        print("Total loss:" + str(rep_loss+regularised(x)))
+        print("Total loss:" + str(total_loss))
         print("Loss: " + str(rep_loss))
 
-        if rep_loss + regularised(x) <= prev_loss:
+        if total_loss <= prev_loss:
             lr *= 2
             prev_x = np.copy(x)
-            prev_loss = rep_loss + regularised(x)
+            prev_loss = total_loss
         else:
             lr /= 2
             x = np.copy(prev_x)

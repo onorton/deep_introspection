@@ -8,6 +8,7 @@ class CaffeNet:
     net = None
     layers = None
     predicted = False
+    img = None
 
     def __init__(self, architecture, weights):
         self.net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
@@ -23,6 +24,10 @@ class CaffeNet:
     def get_activations(self, layer):
         if not self.predicted:
             return None
+
+        if layer == 'data':
+            return self.img
+
         return np.copy(self.net.blobs[layer].data[0])
 
     def get_layer_type(self, layer):
@@ -35,6 +40,7 @@ class CaffeNet:
 
 
     def predict(self, img):
+        self.img = img.transpose(2,1,0)
         self.predicted = True
         self.net.predict([img])
         return np.copy(self.net.blobs['prob'].data)
@@ -62,7 +68,7 @@ class CaffeNet:
         return self.net.params[layer][1].data
 
     def input_shape(self):
-        return self.get_activations(self.get_layer_names()[0]).transpose(2, 1, 0).shape
+        return self.net.blobs[self.get_layer_names()[0]].data[0].transpose(2, 1, 0).shape
 
 class TensorFlowNet:
     sess = None
