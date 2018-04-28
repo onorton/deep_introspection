@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 def test_synthesise_loss_is_low():
     net = network.CaffeNet('deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel')
     img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
+
     net.set_new_size(newSize)
     net.predict(img)
 
-    layer = net.get_layer_names()[-2]
+    layer = net.get_layer_names()[-1]
+    print("Testing layer " + layer)
 
     target_rep = net.get_activations(layer)
 
@@ -16,7 +18,7 @@ def test_synthesise_loss_is_low():
     net.set_new_size(solution.shape[:2])
     net.predict(solution)
 
-    plt.imshow(np.maximum(solution, 0)/256)
+    plt.imshow(np.maximum(solution, 0)/255)
     plt.show()
     print(loss)
 

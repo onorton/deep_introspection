@@ -82,23 +82,27 @@ def propagate_first_conv(net, relevances, activations, weightsLayer, h, l):
 
     return X*backprop(s, weights, X) - L*backprop(s, positiveWeights, L) - H*backprop(s, negativeWeights, H)
 
-def forward(x, w, shape):
+def forward(x, w, b, shape):
     if len(x.shape) == 3:
         x = x.reshape((1,)+x.shape)
-    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3])
-    w_col = w.reshape(w.shape[0],w.shape[1]*w.shape[2]*w.shape[3])
+    w = w.transpose(0, 1, 3, 2)
 
-    out = np.matmul(w_col,x_col)
+    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3])
+    w_col = w.reshape(w.shape[0],-1)
+
+    out = ((w_col @ x_col).T + b.T).T
     out = out.reshape((shape[0], shape[1], shape[2], 1))
-    out = out.transpose(3, 0, 1, 2)
+    out = out.transpose(3, 0, 2, 1)
     return out
 
 def backprop(s, w, x):
     s_reshaped = s
     if len(s.shape) == 3:
         s_reshaped = s.reshape(tuple([1]+list(s.shape)))
-    s_reshaped = np.transpose(s_reshaped, (1,2,3,0))
+    s_reshaped = np.transpose(s_reshaped, (1,3,2,0))
     s_reshaped = s_reshaped.reshape(s_reshaped.shape[0],-1)
+
+    w = w.transpose(0,1,3,2)
 
     x = x.reshape(tuple([1]+list(x.shape)))
 
@@ -141,6 +145,7 @@ def forwardMax(x,k, shape):
 def backwardMax(s, x, k):
     x_reshaped = x.reshape((1,)+x.shape)
     x_reshaped = x_reshaped.reshape(x_reshaped.shape[1], 1, x_reshaped.shape[2], x_reshaped.shape[3])
+
     x_col = im2col.im2col_indices(x_reshaped, k, k, padding=0, stride=k)
 
     max_idx = np.argmax(x_col, axis=0)
