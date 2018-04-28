@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 
 alpha = 6
 beta = 2
-l_tv = 200
-l = 8e-10
+l_tv = 400
+l = 1e-9
 m = 0.5
 
 def synthesise(net, target):
@@ -24,7 +24,7 @@ def synthesise(net, target):
     layer = net.get_layer_names()[-1]
     net.set_new_size(x.shape[:2])
 
-    initial_lr = 0.001
+    initial_lr = 0.0001
     lr = initial_lr
     mu = 0
     prev_x = np.copy(x)
@@ -40,7 +40,7 @@ def synthesise(net, target):
     print("Initial total loss: " + str(prev_loss))
     print("Initial loss: " + str(rep_loss))
 
-    iterations = 100
+    iterations = 40
     for i in range(iterations):
         grad = gradient(net, rep-target)
         delta = grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
@@ -60,11 +60,11 @@ def synthesise(net, target):
         print("Total loss:" + str(total_loss))
         print("Loss: " + str(rep_loss))
 
-        if total_loss <= prev_loss:
+        if rep_loss <= prev_loss:
             if lr < initial_lr:
                 lr *= 2
             prev_x = np.copy(x)
-            prev_loss = total_loss
+            prev_loss = rep_loss
         else:
             lr /= 2
             x = np.copy(prev_x)
