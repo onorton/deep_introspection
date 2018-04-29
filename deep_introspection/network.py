@@ -25,7 +25,7 @@ class CaffeNet:
         if not self.predicted:
             return None
 
-        if layer == 'data':
+        if layer == 'data' and self.img.shape == self.net.blobs['data'].data[0].shape:
             return self.img
 
         return np.copy(self.net.blobs[layer].data[0])

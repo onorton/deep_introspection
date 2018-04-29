@@ -82,34 +82,35 @@ def propagate_first_conv(net, relevances, activations, weightsLayer, h, l):
 
     return X*backprop(s, weights, X) - L*backprop(s, positiveWeights, L) - H*backprop(s, negativeWeights, H)
 
-def forward(x, w, b, shape):
+def forward(x, w, shape):
     if len(x.shape) == 3:
         x = x.reshape((1,)+x.shape)
-    w = w.transpose(0, 1, 3, 2)
-
     x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3])
-    w_col = w.reshape(w.shape[0],-1)
+    w_col = w.reshape(w.shape[0],w.shape[1]*w.shape[2]*w.shape[3])
 
-    out = ((w_col @ x_col).T + b.T).T
+    out = np.matmul(w_col,x_col)
     out = out.reshape((shape[0], shape[1], shape[2], 1))
-    out = out.transpose(3, 0, 2, 1)
+    out = out.transpose(3, 0, 1, 2)
     return out
 
 def backprop(s, w, x):
     s_reshaped = s
     if len(s.shape) == 3:
-        s_reshaped = s.reshape(tuple([1]+list(s.shape)))
-    s_reshaped = s_reshaped.transpose(1,3,2,0)
-    s_reshaped = s_reshaped.reshape(s_reshaped.shape[0],-1)
-
-    w = w.transpose(0, 1, 3, 2)
+        s_reshaped = np.zeros(shape=(1, s.shape[0],s.shape[1],s.shape[2]))
+        s_reshaped[0] = s
+    s_reshaped = np.transpose(s_reshaped, (1,2,3,0))
+    s_reshaped = s_reshaped.reshape((s_reshaped.shape[0],s_reshaped.shape[1]*s_reshaped.shape[2]*s_reshaped.shape[3]))
 
     x = x.reshape(tuple([1]+list(x.shape)))
 
-    W_reshape = w.reshape(w.shape[0],-1)
-    dX_col = W_reshape.T @ s_reshaped
+    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3])
+
+    dW = np.matmul(s_reshaped, np.transpose(x_col))
+    dW = dW.reshape(w.shape)
+    W_reshape = w.reshape((w.shape[0],w.shape[1]*w.shape[2]*w.shape[3]))
+    dX_col = np.matmul(np.transpose(W_reshape), s_reshaped)
     dX = im2col.col2im_indices(dX_col, x.shape, w.shape[2], w.shape[3])
-    return dX[0].transpose(0,2,1)
+    return dX[0]
 
 def propagate_pooling(net, relevances, activations, poolLayer, k):
     """Calculates the layer-wise relevance propagations for a given pooling layer

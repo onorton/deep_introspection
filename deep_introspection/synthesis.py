@@ -1,5 +1,5 @@
 import numpy as np
-from deep_introspection import lrp
+from deep_introspection import im2col
 import matplotlib.pyplot as plt
 
 alpha = 6
@@ -21,7 +21,7 @@ def synthesise(net, target):
     An image as a numpy array, total loss
     """
     x = 256*np.random.uniform(size=net.input_shape())-128
-    layer = net.get_layer_names()[-1]
+    layer = net.get_layer_names()[2]
     net.set_new_size(x.shape[:2])
 
     initial_lr = 0.0001
@@ -34,13 +34,13 @@ def synthesise(net, target):
 
     rep_loss = loss(rep, target)
 
-    #prev_loss = rep_loss
+    prev_loss = rep_loss
     prev_loss = rep_loss + regularised(x)
 
     print("Initial total loss: " + str(prev_loss))
     print("Initial loss: " + str(rep_loss))
 
-    iterations = 40
+    iterations = 400
     for i in range(iterations):
         grad = gradient(net, rep-target)
         delta = grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
@@ -60,11 +60,11 @@ def synthesise(net, target):
         print("Total loss:" + str(total_loss))
         print("Loss: " + str(rep_loss))
 
-        if rep_loss <= prev_loss:
+        if total_loss <= prev_loss:
             if lr < initial_lr:
                 lr *= 2
             prev_x = np.copy(x)
-            prev_loss = rep_loss
+            prev_loss = total_loss
         else:
             lr /= 2
             x = np.copy(prev_x)
@@ -128,7 +128,7 @@ def gradient(net, out):
 
 
     """
-    layer_names = net.get_layer_names()
+    layer_names = net.get_layer_names()[:3]
 
     grad = 2*out
     layer_names.reverse()
@@ -149,8 +149,37 @@ def gradient(net, out):
             if next_layer_type != 'InnerProduct' :
                 grad = grad.reshape(net.get_activations(next_layer).shape)
         elif layer_type == 'Convolution':
-            without_relu = lrp.forward(net.get_activations(next_layer), net.get_weights(name), net.get_biases(name), net.get_activations(name).shape)[0]
+            without_relu = forward(net.get_activations(next_layer), net.get_weights(name), net.get_biases(name), net.get_activations(name).shape)[0]
             grad[without_relu <= 0] = 0
-            grad = lrp.backprop(grad, net.get_weights(name), net.get_activations(next_layer))
+            grad = backprop(grad, net.get_weights(name), net.get_activations(next_layer))
 
     return grad.T
+
+def forward(x, w, b, shape):
+    if len(x.shape) == 3:
+        x = x.reshape((1,)+x.shape)
+    w = w.transpose(0, 1, 3, 2)
+
+    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3])
+    w_col = w.reshape(w.shape[0],-1)
+
+    out = ((w_col @ x_col).T + b.T).T
+    out = out.reshape((shape[0], shape[1], shape[2], 1))
+    out = out.transpose(3, 0, 2, 1)
+    return out
+
+def backprop(s, w, x):
+    s_reshaped = s
+    if len(s.shape) == 3:
+        s_reshaped = s.reshape(tuple([1]+list(s.shape)))
+    s_reshaped = s_reshaped.transpose(1,3,2,0)
+    s_reshaped = s_reshaped.reshape(s_reshaped.shape[0],-1)
+
+    w = w.transpose(0, 1, 3, 2)
+
+    x = x.reshape(tuple([1]+list(x.shape)))
+
+    W_reshape = w.reshape(w.shape[0],-1)
+    dX_col = W_reshape.T @ s_reshaped
+    dX = im2col.col2im_indices(dX_col, x.shape, w.shape[2], w.shape[3])
+    return dX[0].transpose(0,2,1)
