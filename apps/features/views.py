@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 import os
+import functools
 
 from apps.features.models import FeatureSet
 from apps.uploadModel.models import TestModel
@@ -79,6 +80,14 @@ def predictions_from_features(net, img_path, inactive_features):
 
     return predictions, img
 
+def compare(item1, item2):
+    if item1['difference'] < item2['difference']:
+        return -1
+    elif item1['difference'] > item2['difference']:
+        return 1
+    else:
+        return 0
+
 @csrf_exempt
 def index(request, model, image):
     features_path = 'features/model_'+ str(model) + '_image_' + str(image) + '.dat'
@@ -94,6 +103,7 @@ def index(request, model, image):
 
         architecture = str(test_model.architecture)
         weights = str(test_model.weights)
+        labels = str(test_model.labels)
 
         if architecture.split(".")[-1].lower() == "meta":
             net = network.TensorFlowNet(architecture, './models/'+ str(test_model.user) +'_' + test_model.name + '/')
@@ -113,7 +123,24 @@ def index(request, model, image):
 
         relevances = lrp.calculate_lrp_heatmap(net, img)
         clusters = features.extract_features_from_relevances(relevances)
-        write_clusters(features_path, clusters)
+
+        predictions, _ = predictions_from_features(net, img_path, [])
+        basic_predictions = get_top_predictions(predictions, -1, labels)
+        predicted = basic_predictions[0]
+
+        sorted_predictions = []
+        for i in range(len(clusters)):
+            cluster = list(itertools.chain.from_iterable(map(lambda x: [x+(0,),x+(1,),x+(2,)], clusters[i])))
+            predictions, _ = predictions_from_features(net, img_path, cluster)
+            diff = predicted['value'] - predictions[predicted['index']]
+            sorted_predictions.append({'index':i,'difference':diff})
+
+
+        sorted_predictions = sorted(sorted_predictions, key=functools.cmp_to_key(compare))
+        sorted_predictions.reverse()
+
+        clusters = list(map(lambda x: clusters[x['index']], sorted_predictions))
+
         overlay_shape = (img.shape[0],img.shape[1],4)
         for i, cluster in enumerate(clusters):
             overlay_img = np.zeros(overlay_shape)
