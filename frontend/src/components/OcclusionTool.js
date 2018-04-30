@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import OcclusionResult from './OcclusionResult'
 import Predictions from './Predictions'
-import { Tooltip, Position } from  "@blueprintjs/core";
+import { Tooltip, Position, Intent } from  "@blueprintjs/core";
 import OcclusionFeedback from './OcclusionFeedback'
+import {MainToaster} from '../MainToaster'
 
 export default class OcclusionTool extends Component {
 
@@ -58,6 +59,8 @@ export default class OcclusionTool extends Component {
     const features = this.state.features
     const tool = this
     const inactiveFeatures = features.filter(feature => !feature.active).map(feature => feature.feature)
+    tool.setState({predictions: []})
+    MainToaster.show({ timeout:5000, intent: Intent.PRIMARY, message: "Calculating new predictions..." });
     fetch('/features/evaluate/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
       method: 'POST',
       body: JSON.stringify({inactiveFeatures: inactiveFeatures}),
