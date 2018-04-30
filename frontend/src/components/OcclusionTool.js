@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import OcclusionResult from './OcclusionResult'
 import Predictions from './Predictions'
-import { Tooltip, Position, Intent } from  "@blueprintjs/core";
+import { Tooltip, Position, Intent, Spinner} from  "@blueprintjs/core";
 import OcclusionFeedback from './OcclusionFeedback'
 import {MainToaster} from '../MainToaster'
 
@@ -15,17 +15,18 @@ export default class OcclusionTool extends Component {
       image: null,
       hover: null,
       results: null,
-      feedback: false
+      feedback: false,
+      analysing: false,
     };
   }
   componentWillReceiveProps(nextProps) {
     if (this.props.testImage.id != nextProps.testImage.id || this.props.testModel.id != nextProps.testModel.id) {
-      this.setState({image: nextProps.testImage.url, predictions: [], features: [], results: null})
+      this.setState({image: nextProps.testImage.url, predictions: [], features: [], results: null, analysing: false})
       this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
     }
   }
   componentDidMount() {
-    this.setState({image: this.props.testImage.url, predictions: [], features: [], results: null})
+    this.setState({image: this.props.testImage.url, predictions: [], features: [], results: null, analysing: false})
     this.fetchFeatures(this.props.testModel.id, this.props.testImage.id)
   }
 
@@ -82,6 +83,8 @@ export default class OcclusionTool extends Component {
 
   analyse() {
     const tool = this
+    MainToaster.show({ timeout:5000, intent: Intent.PRIMARY, message: "Analysing occlusions" });
+    tool.setState({analysing:true})
     fetch('/features/analyse/' + this.props.testModel.id + '/' +  this.props.testImage.id, {
       method: 'GET',
       headers: {
@@ -103,15 +106,22 @@ export default class OcclusionTool extends Component {
 
   render(){
     const tool = this
+    const placeholderFeatures = [0,1,2,3,4,5]
     return (
     <div className="toolArea">
-    <div className="buttonArea" style={{width:'100%', height:40}}>
+    <div className="buttonArea" style={{width:'100%'}}>
     <Tooltip style={{width:200}} content="Analyses model and image with various metrics. May take several minutes." position={Position.TOP}>
       <label className="pt-button pt-intent-primary pt-large " onClick={() => {this.analyse()}}>Analyse</label>
     </Tooltip>
     </div>
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
-    {this.state.features.map(function(feature, index) {
+    {this.state.features.length == 0 ?
+      placeholderFeatures.map(function(feature, index) {
+         const placeholderFeature = <li style={{padding: '5px 0px 5px 0px'}}><label className="pt-button pt-disabled pt-skeleton">Feature 0</label></li>
+        return placeholderFeature
+      })
+
+      :this.state.features.map(function(feature, index) {
 
          const activeFeature = <li style={{padding: '5px 0px 5px 0px'}}><label className="pt-button pt-active pt-intent-primary " onClick={() => tool.toggle(index)} onMouseOver={() => tool.setState({hover: index})} onMouseLeave={() => tool.setState({hover: null})}>Feature {feature.feature}</label></li>
          const inactiveFeature =  <li style={{padding: '5px 0px 5px 0px'}}><label className="pt-button pt-intent-primary" onClick={() => tool.toggle(index)} onMouseOver={() =>  tool.setState({hover: index})} onMouseLeave={() => tool.setState({hover: null})}>Feature {feature.feature}</label></li>
@@ -127,7 +137,17 @@ export default class OcclusionTool extends Component {
     <Predictions predictions={this.state.predictions}/>
     </div>
 
-    {(this.state.results != null) ?<div><OcclusionResult
+    {(this.state.results == null) ?
+        (this.state.analysing) ?
+        <div class="pt-spinner pt-large">
+          <div class="pt-spinner-svg-container" style={{left:165, top:30}}>
+            <svg viewBox="0 0 100 100">
+              <path class="pt-spinner-track" d="M 50,50 m 0,-44.5 a 44.5,44.5 0 1 1 0,89 a 44.5,44.5 0 1 1 0,-89"></path>
+              <path class="pt-spinner-head" d="M 94.5 50 A 44.5 44.5 0 0 0 50 5.5"></path>
+            </svg>
+          </div>
+        </div>: <div/>
+      : <div><OcclusionResult
       features={this.state.features.map(function(feature) {return feature.feature})}
       testModel={this.props.testModel}
       testImage={this.props.testImage}
@@ -135,7 +155,7 @@ export default class OcclusionTool extends Component {
       results={this.state.results}/>
       <OcclusionFeedback isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} originalClass={this.state.results.originalClass} onClose={() => this.setState({feedback:false})}/>
       <label className="pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label></div>
-      : <div/>}
+      }
     </div>
     )
   }

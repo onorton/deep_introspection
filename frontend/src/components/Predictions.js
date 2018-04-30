@@ -11,7 +11,7 @@ export default class Predictions extends Component {
       {this.props.predictions.length == 0 ?
         <ul style={{listStyleType: 'none', height:100, padding: '0 20px 0 20px', position: 'relative'}}>
         {array.map(function(bar, index) {
-        return(<li className='pt-skeleton' style={{width:'100%', margin:"5px 0px 5px 0px", backgroundImage: 'linear-gradient(to right, rgba(0, 190, 0, 1), rgba(0, 190, 0, 1))', backgroundRepeat: 'no-repeat', backgroundSize: 20*(5-index)+'%'}}>_</li>)
+        return(<li className='pt-skeleton' style={{width:'100%', margin:"5px 0px 5px 0px"}}>_</li>)
       })
         }
         </ul>
