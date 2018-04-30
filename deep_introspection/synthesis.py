@@ -1,12 +1,26 @@
 import numpy as np
-from deep_introspection import im2col
+from deep_introspection import im2col, lrp
 import matplotlib.pyplot as plt
 
 alpha = 6
 beta = 2
-l_tv = 400
+l_tv = 0
 l = 1e-9
 m = 0.5
+
+def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
+    x = 256*np.random.uniform(size=net.input_shape())-128
+
+    x[ymin:ymax+1,xmin:xmax+1,:] = img[ymin:ymax+1,xmin:xmax+1,:]
+
+    net.set_new_size(net.input_shape())
+    net.predict(x)
+
+    layer = net.get_layer_names()[-1]
+    target = net.get_activations(layer)
+
+    return synthesise(net, target)
+
 
 def synthesise(net, target):
     """
@@ -21,10 +35,10 @@ def synthesise(net, target):
     An image as a numpy array, total loss
     """
     x = 256*np.random.uniform(size=net.input_shape())-128
-    layer = net.get_layer_names()[2]
+    layer = net.get_layer_names()[-1]
     net.set_new_size(x.shape[:2])
 
-    initial_lr = 0.0001
+    initial_lr = 0.005
     lr = initial_lr
     mu = 0
     prev_x = np.copy(x)
@@ -34,20 +48,20 @@ def synthesise(net, target):
 
     rep_loss = loss(rep, target)
 
-    prev_loss = rep_loss
+    #prev_loss = rep_loss
     prev_loss = rep_loss + regularised(x)
 
     print("Initial total loss: " + str(prev_loss))
     print("Initial loss: " + str(rep_loss))
 
-    iterations = 400
+    iterations = 20
     for i in range(iterations):
         grad = gradient(net, rep-target)
         delta = grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
         #delta = grad
 
         old_mu = np.copy(mu)
-        mu = -lr * delta
+        mu = m*mu -lr * delta
         x += mu
 
 
@@ -128,7 +142,7 @@ def gradient(net, out):
 
 
     """
-    layer_names = net.get_layer_names()[:3]
+    layer_names = net.get_layer_names()
 
     grad = 2*out
     layer_names.reverse()
