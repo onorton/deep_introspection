@@ -4,15 +4,15 @@ import matplotlib.pyplot as plt
 
 alpha = 6
 beta = 2
-l_tv = 0
-l = 1e-9
-m = 0.5
+l_tv = 2e-4
+l = 2e-10
+m = 0.9
+C = 200
 
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
     x = 256*np.random.uniform(size=net.input_shape())-128
 
     x[ymin:ymax+1,xmin:xmax+1,:] = img[ymin:ymax+1,xmin:xmax+1,:]
-
     net.set_new_size(net.input_shape())
     net.predict(x)
 
@@ -35,10 +35,11 @@ def synthesise(net, target):
     An image as a numpy array, total loss
     """
     x = 256*np.random.uniform(size=net.input_shape())-128
+
     layer = net.get_layer_names()[-1]
     net.set_new_size(x.shape[:2])
 
-    initial_lr = 0.005
+    initial_lr = 0.1
     lr = initial_lr
     mu = 0
     prev_x = np.copy(x)
@@ -47,18 +48,15 @@ def synthesise(net, target):
     rep = net.get_activations(layer)
 
     rep_loss = loss(rep, target)
-
-    #prev_loss = rep_loss
     prev_loss = rep_loss + regularised(x)
 
     print("Initial total loss: " + str(prev_loss))
     print("Initial loss: " + str(rep_loss))
 
-    iterations = 20
+    iterations = 100
     for i in range(iterations):
         grad = gradient(net, rep-target)
-        delta = grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
-        #delta = grad
+        delta = C*grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
 
         old_mu = np.copy(mu)
         mu = m*mu -lr * delta
@@ -68,6 +66,7 @@ def synthesise(net, target):
         net.predict(x)
         rep = net.get_activations(layer)
         rep_loss = loss(rep, target)
+
 
         total_loss = rep_loss + regularised(x)
         print("Iteration " + str(i) +": " + str(lr))
@@ -121,7 +120,7 @@ def tv_grad(x):
     shift_h_back[:,1:] = x[:,:-1]
     shift_h_back[:,0] = x[:,0]
 
-    grad = -2*(shift_h-x)-2*(shift_w-x)+2*(x-shift_h_back)+2*(x-shift_w_back)
+    grad = 2*((x-shift_h_back)+(x-shift_w_back)-(shift_h-x)-(shift_w-x))
 
     return grad
 
