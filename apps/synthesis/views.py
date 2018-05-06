@@ -2,18 +2,27 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 
-from deep_introspection import synthesis
+from deep_introspection import synthesis, network, utils
 
 from apps.uploadModel.models import TestModel
 from apps.uploadImage.models import TestImage
 from apps.synthesis.models import FeatureImage
 from apps.features.views import read_clusters
 
+import json
+
+import caffe
+import numpy as np
+
+import json
+
+from PIL import Image
+
 @csrf_exempt
 def index (request, model, image, feature):
     if request.method == 'GET':
-        images = map(lambda x: x.feature_image, FeatureSet.objects.filter(model__id=model,image__id=image, feature=feature))
-        return HttpResponse("{\"images\": " + images +"}")
+        images = list(map(lambda x: str(x.feature_image), FeatureImage.objects.filter(model__id=model,image__id=image, feature=feature)))
+        return HttpResponse("{\"images\": " + json.dumps(images) +"}")
     else:
         return HttpResponse("{message: \"Invalid method.\"}", status=405)
 
@@ -23,8 +32,6 @@ def synthesise(request, model, image, feature):
     if request.method == 'POST':
         features_path = 'features/model_'+ str(model) + '_image_' + str(image) + '.dat'
 
-        body = json.loads(request.body.decode("utf-8"))
-        feature = body['feature']
         clusters = read_clusters(features_path)
 
         cluster = np.array(clusters[feature])
@@ -51,15 +58,15 @@ def synthesise(request, model, image, feature):
 
         feature_img, _ = synthesis.synthesise_boundary(net, img, xmax, ymax, xmin, ymin)
 
-        num = FeatureSet.objects.filter(model__id=model,image__id=image).count()
+        num = FeatureImage.objects.filter(model__id=model,image__id=image,feature=feature).count()
 
         # save synthesised image
         feature_img = Image.fromarray(np.uint8(feature_img))
-        feature_path = 'synthesised_images/model_'+ str(model) + '_image_' + str(image) + '_' + str(feature) + '_' + str(num) + '.jpg'
+        feature_path = 'synthesised_features/model_'+ str(model) + '_image_' + str(image) + '_' + str(feature) + '_' + str(num) + '.jpg'
         feature_img.save(feature_path)
 
-        featureImage = FeatureImage(model__id = model, image__id=image, feature=feature, feature_image=feature_path)
+        featureImage = FeatureImage(model = test_model, image=TestImage.objects.filter(id=image).first(), feature=feature, feature_image=feature_path)
         featureImage.save()
-        return HttpResponse("{\"image\": " + modification_path +"}")
+        return HttpResponse("{\"image\": " + feature_path +"}")
     else:
         return HttpResponse("{message: \"Invalid method.\"}", status=405)

@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 alpha = 6
 beta = 2
-l_tv = 2e-4
-l = 2e-10
+l_tv = 10
+l = 5e-10
 m = 0.9
-C = 200
+C = 400
 
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
     x = 256*np.random.uniform(size=net.input_shape())-128
@@ -39,7 +39,8 @@ def synthesise(net, target):
     layer = net.get_layer_names()[-1]
     net.set_new_size(x.shape[:2])
 
-    initial_lr = 0.1
+    initial_lr = 0.00075
+
     lr = initial_lr
     mu = 0
     prev_x = np.copy(x)
@@ -53,7 +54,7 @@ def synthesise(net, target):
     print("Initial total loss: " + str(prev_loss))
     print("Initial loss: " + str(rep_loss))
 
-    iterations = 100
+    iterations = 1
     for i in range(iterations):
         grad = gradient(net, rep-target)
         delta = C*grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
@@ -70,7 +71,7 @@ def synthesise(net, target):
 
         total_loss = rep_loss + regularised(x)
         print("Iteration " + str(i) +": " + str(lr))
-        print("Total loss:" + str(total_loss))
+        print("Total loss:" + str(total_loss) + ", TV loss: " + str(tv(x)))
         print("Loss: " + str(rep_loss))
 
         if total_loss <= prev_loss:
@@ -89,6 +90,10 @@ def regularised(x):
 
     norm = np.sum(x**alpha)
 
+
+    return l*norm + l_tv*tv(x)
+
+def tv(x):
     shift_w = np.zeros(x.shape)
     shift_w[:-1,:] = x[1:,:]
     shift_w[-1,:] = x[-1,:]
@@ -100,7 +105,7 @@ def regularised(x):
 
 
     tv = np.sum((shift_w-x)**2 + (shift_h-x)**2)
-    return l*norm + l_tv*tv
+    return tv
 
 def tv_grad(x):
 

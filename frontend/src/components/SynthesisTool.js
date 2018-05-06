@@ -10,6 +10,7 @@ export default class SynthesisTool extends Component {
       selected: 0,
       hover: null,
       images: [],
+      image: null,
     };
   }
 
@@ -17,16 +18,18 @@ export default class SynthesisTool extends Component {
     if (this.props.testImage.id != nextProps.testImage.id || this.props.testModel.id != nextProps.testModel.id) {
       this.setState({image: nextProps.testImage.url, features: [], images: []})
       this.fetchFeatures(nextProps.testModel.id, nextProps.testImage.id)
+      this.select(0)
     }
   }
   componentDidMount() {
     this.setState({image: this.props.testImage.url, features: [], images: []})
     this.fetchFeatures(this.props.testModel.id, this.props.testImage.id)
+    this.select(0)
   }
 
   fetchFeatures(model, image) {
     const tool = this
-    fetch('/features/' + model + '/' + image, {
+    fetch('/features/' + this.props.testModel.id + '/' + this.props.testImage.id, {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
@@ -47,7 +50,7 @@ export default class SynthesisTool extends Component {
   select(index) {
     const tool = this
     this.setState({selected: index})
-    fetch('/synthesis/' + this.props.model + '/' + this.props.image + '/' + index, {
+    fetch('/synthesis/' + this.props.testModel.id + '/' + this.props.testImage.id + '/' + index, {
       method: 'GET',
       headers: {
           "Content-Type": "application/json"
@@ -67,7 +70,7 @@ export default class SynthesisTool extends Component {
 
   synthesise() {
     const tool = this
-    fetch('/synthesis/'  + this.props.model + '/' + this.props.image + '/' + this.state.selected, {
+    fetch('/synthesis/synthesise/'  + this.props.testModel.id + '/' + this.props.testImage.id + '/' + this.state.selected, {
       method: 'POST',
       headers: {
           "Content-Type": "application/json"
@@ -107,13 +110,6 @@ export default class SynthesisTool extends Component {
     })}
     </ul>
 
-    <ul style={{listStyleType: 'none', padding: 0, marginLeft: 10}}>
-    {this.state.features.map(function(feature, index) {
-
-      <img src={this.state.feature} style={{width:'100%', borderStyle:"solid", borderColor:"#10161A", position:'relative', top: 0, left: 0}}/>
-    })}
-
-    </ul>
 
     <div className="image" style={{ float:"right", width: 400, marginRight:20, height:600}}>
     <div style={{position:'relative'}}>
@@ -121,6 +117,15 @@ export default class SynthesisTool extends Component {
     {(this.state.hover != null) ? <img src={'media/features/feature_model_'+ this.props.testModel.id + '_image_' + this.props.testImage.id + '_' + this.state.hover + '.png'} style={{width:'100%', zIndex:1, position:'absolute', top: 0, left: 0}}/> : <div/>}
     </div>
     </div>
+
+    <ul style={{listStyleType: 'none', padding: 0}}>
+    {this.state.images.map(function(image, index) {
+      return  <li style={{padding: '5px 0px 5px 0px'}}><img src={'/media/' + image} style={{width:300, borderStyle:"solid", borderColor:"#10161A"}}/></li>
+    })}
+
+    </ul>
+
+
     </div>
     )
   }
