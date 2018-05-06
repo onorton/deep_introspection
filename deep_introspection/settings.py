@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.features',
     'apps.accounts',
     'apps.evaluation',
+    'apps.synthesis',
 
 ]
 WEBPACK_LOADER = {

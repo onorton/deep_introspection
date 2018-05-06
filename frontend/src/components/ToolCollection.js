@@ -10,8 +10,7 @@ export default class ToolCollection extends Component {
     return (
     <Tabs2 id="toolTabs" onChange={this.handleTabChange} style={this.props.style}>
    <Tab2 id="oc" title={<h5>Occlusion</h5>} panel={<OcclusionTool testImage={this.props.testImage} testModel={this.props.testModel}/>} />
-   <Tab2 id="sy" title={<h5>Synthesis</h5>} panel={<SynthesisTool testImage={this.props.testImage}/>}/>
-   <Tab2 id="bo" title={<h5>Boundary</h5>} panel={<BoundaryTool/>}/>
+   <Tab2 id="sy" title={<h5>Synthesis</h5>} panel={<SynthesisTool testImage={this.props.testImage} testModel={this.props.testModel}/>}/>
    <Tabs2/>
 </Tabs2>
     )
