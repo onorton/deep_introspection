@@ -21,7 +21,7 @@ from PIL import Image
 @csrf_exempt
 def index (request, model, image, feature):
     if request.method == 'GET':
-        images = list(map(lambda x: str(x.feature_image), FeatureImage.objects.filter(model__id=model,image__id=image, feature=feature)))
+        images = list(map(lambda x: {'src': '/media/'+str(x.feature_image), 'thumbnail': '/media/'+str(x.feature_image)}, FeatureImage.objects.filter(model__id=model,image__id=image, feature=feature)))
         return HttpResponse("{\"images\": " + json.dumps(images) +"}")
     else:
         return HttpResponse("{message: \"Invalid method.\"}", status=405)
