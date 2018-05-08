@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 alpha = 6
 beta = 2
 l_tv = 10
-l = 5e-10
+l = 5e-9
 m = 0.9
-C = 400
+C = 1e+4
 
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
     x = 256*np.random.uniform(size=net.input_shape())-128
@@ -39,7 +39,7 @@ def synthesise(net, target):
     layer = net.get_layer_names()[-1]
     net.set_new_size(x.shape[:2])
 
-    initial_lr = 0.00075
+    initial_lr = 0.0001
 
     lr = initial_lr
     mu = 0
@@ -54,7 +54,7 @@ def synthesise(net, target):
     print("Initial total loss: " + str(prev_loss))
     print("Initial loss: " + str(rep_loss))
 
-    iterations = 1
+    iterations = 400
     for i in range(iterations):
         grad = gradient(net, rep-target)
         delta = C*grad + l*alpha*x**(alpha-1) + l_tv*tv_grad(x)
@@ -73,7 +73,11 @@ def synthesise(net, target):
         print("Iteration " + str(i) +": " + str(lr))
         print("Total loss:" + str(total_loss) + ", TV loss: " + str(tv(x)))
         print("Loss: " + str(rep_loss))
+        if (i+1)%100 == 0:
+            plt.imshow(np.maximum(x+128, 0)/255)
+            plt.show()
 
+        # dynamic lr
         if total_loss <= prev_loss:
             if lr < initial_lr:
                 lr *= 2
@@ -83,6 +87,10 @@ def synthesise(net, target):
             lr /= 2
             x = np.copy(prev_x)
             mu = old_mu
+
+        # if lr is too low, leave prematurely
+        if lr < 1e-10:
+            break
 
     return x+128, total_loss
 
