@@ -11,9 +11,8 @@ V = B/6.5
 l = 1/(224*224*B**alpha)
 l_tv = 1/(224*224*V**beta)
 
-
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
-    x = 2*B*np.random.uniform(size=net.input_shape())
+    x = 2*B*np.random.uniform(size=net.input_shape())-B
 
     x[ymin:ymax+1,xmin:xmax+1,:] = img[ymin:ymax+1,xmin:xmax+1,:]
     net.set_new_size(net.input_shape())
@@ -37,21 +36,24 @@ def synthesise(net, target):
     output
     An image as a numpy array, total loss
     """
-    x = 2*B*np.random.uniform(size=net.input_shape())
+    x = 2*B*np.random.uniform(size=net.input_shape())-B
+    # clip pixel intensities
+    pixel_intensities = np.sum(x**2, axis=2)**0.5
+    x[pixel_intensities > 2*B] = (x[pixel_intensities > 2*B].T/(x[pixel_intensities > 2*B].T/2*B)).T
+
 
     layer = net.get_layer_names()[-1]
     net.set_new_size(x.shape[:2])
 
-    lr = 0.01*(B**2)/alpha
+    initial_lr = 0.01*(B**2)/alpha
     mu = 0
     g = 0
-    prev_x = np.copy(x)
 
     net.predict(x)
     rep = net.get_activations(layer)
 
     rep_loss = loss(rep, target)
-    prev_loss = rep_loss + regularised(x)
+    prev_loss = C*rep_loss + regularised(x)
 
     print("Initial total loss: " + str(prev_loss))
     print("Initial loss: " + str(rep_loss))
@@ -61,26 +63,30 @@ def synthesise(net, target):
         # adagrad
         grad = C*gradient(net, rep-target) + l*norm_grad(x) + l_tv*tv_grad(x)
         g = m*g + grad**2
-        lr = 1/(1/lr + g**0.5)
+        lr = 1/(1/initial_lr + g**0.5)
         mu = m*mu -lr * grad
         x += mu
 
+        # clip pixel intensities
+        pixel_intensities = np.sum(x**2, axis=2)**0.5
+        x[pixel_intensities > 2*B] = (x[pixel_intensities > 2*B].T/(x[pixel_intensities > 2*B].T/2*B)).T
+        pixel_intensities = np.sum(x**2, axis=2)**0.5
 
         net.predict(x)
         rep = net.get_activations(layer)
         rep_loss = loss(rep, target)
 
 
-        total_loss = rep_loss + regularised(x)
-        print("Iteration " + str(i))
+        total_loss = C*rep_loss + regularised(x)
+        print("Iteration " + str(i) + ": " + str(np.mean(lr**2)))
         print("Total loss:" + str(total_loss) + ", TV loss: " + str(tv(x)))
         print("Loss: " + str(rep_loss))
 
         if (i+1)%100 == 0:
-            plt.imshow(np.maximum(x, 0)/2*B)
+            plt.imshow(np.maximum(x+B, 0)/(2*B))
             plt.show()
 
-    return x, total_loss
+    return x+B, total_loss
 
 def regularised(x):
     norm = np.sum((np.sum(x**2, 2)**(alpha/2)))
@@ -95,12 +101,11 @@ def norm_grad(x):
 def tv(x):
     shift_w = np.zeros(x.shape)
     shift_w[:-1,:] = x[1:,:]
-    #shift_w[-1,:] = x[-1,:]
-
+    shift_w[-1,:] = x[0,:]
 
     shift_h = np.zeros(x.shape)
     shift_h[:,:-1] = x[:,1:]
-    #shift_h[:,-1] = x[:,-1]
+    shift_h[:,-1] = x[:,0]
 
 
     tv = np.sum((shift_w-x)**2 + (shift_h-x)**2)
@@ -110,19 +115,19 @@ def tv_grad(x):
 
     shift_w = np.zeros(x.shape)
     shift_w[:-1,:] = x[1:,:]
-    #shift_w[-1,:] = x[-1,:]
+    shift_w[-1,:] = x[0,:]
 
     shift_w_back = np.zeros(x.shape)
     shift_w_back[1:,:] = x[:-1,:]
-    #shift_w_back[0,:] = x[0,:]
+    shift_w_back[0,:] = x[-1,:]
 
     shift_h = np.zeros(x.shape)
     shift_h[:,:-1] = x[:,1:]
-    #shift_h[:,-1] = x[:,-1]
+    shift_h[:,-1] = x[:,0]
 
     shift_h_back = np.zeros(x.shape)
     shift_h_back[:,1:] = x[:,:-1]
-    #shift_h_back[:,0] = x[:,0]
+    shift_h_back[:,0] = x[:,-1]
 
     grad = 2*((x-shift_h_back)+(x-shift_w_back)-(shift_h-x)-(shift_w-x))
 
