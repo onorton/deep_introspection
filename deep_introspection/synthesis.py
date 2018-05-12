@@ -5,14 +5,16 @@ import matplotlib.pyplot as plt
 alpha = 6
 beta = 2
 m = 0.9
-C = 1
 B = 80
+B_plus = 2*B
+C = 1
+
 V = B/6.5
 l = 1/(224*224*B**alpha)
 l_tv = 1/(224*224*V**beta)
 
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
-    x = 2*B*np.random.uniform(size=net.input_shape())-B
+    x = B_plus*np.random.uniform(size=net.input_shape())-B
 
     x[ymin:ymax+1,xmin:xmax+1,:] = img[ymin:ymax+1,xmin:xmax+1,:]
     net.set_new_size(net.input_shape())
@@ -36,13 +38,16 @@ def synthesise(net, target):
     output
     An image as a numpy array, total loss
     """
-    x = 2*B*np.random.uniform(size=net.input_shape())-B
+    #x = B_plus*np.random.uniform(size=net.input_shape())-B
+    x = B*np.random.normal(size=net.input_shape())
     # clip pixel intensities
     pixel_intensities = np.sum(x**2, axis=2)**0.5
-    x[pixel_intensities > 2*B] = (x[pixel_intensities > 2*B].T/(x[pixel_intensities > 2*B].T/2*B)).T
+    print(len(pixel_intensities > B_plus))
+    index = np.argwhere(pixel_intensities > B_plus)[2]
+    x[pixel_intensities > B_plus] = (x[pixel_intensities > B_plus].T/(pixel_intensities[pixel_intensities > B_plus].T/B_plus)).T
 
 
-    layer = net.get_layer_names()[-1]
+    layer = net.get_layer_names()[1]
     net.set_new_size(x.shape[:2])
 
     initial_lr = 0.01*(B**2)/alpha
@@ -61,29 +66,27 @@ def synthesise(net, target):
     iterations = 400
     for i in range(iterations):
         # adagrad
-        grad = C*gradient(net, rep-target) + l*norm_grad(x) + l_tv*tv_grad(x)
+        grad = C*gradient(net, layer, (rep-target))/(np.linalg.norm(target)**2) + l*norm_grad(x) + l_tv*tv_grad(x)
         g = m*g + grad**2
         lr = 1/(1/initial_lr + g**0.5)
         mu = m*mu -lr * grad
-        x += mu
+        x += B_plus*mu
 
         # clip pixel intensities
         pixel_intensities = np.sum(x**2, axis=2)**0.5
-        x[pixel_intensities > 2*B] = (x[pixel_intensities > 2*B].T/(x[pixel_intensities > 2*B].T/2*B)).T
-        pixel_intensities = np.sum(x**2, axis=2)**0.5
+        x[pixel_intensities > B_plus] = (x[pixel_intensities > B_plus].T/(pixel_intensities[pixel_intensities > B_plus].T/B_plus)).T
 
         net.predict(x)
         rep = net.get_activations(layer)
         rep_loss = loss(rep, target)
-
-
         total_loss = C*rep_loss + regularised(x)
+
         print("Iteration " + str(i) + ": " + str(np.mean(lr**2)))
         print("Total loss:" + str(total_loss) + ", TV loss: " + str(tv(x)))
         print("Loss: " + str(rep_loss))
 
         if (i+1)%100 == 0:
-            plt.imshow(np.maximum(x+B, 0)/(2*B))
+            plt.imshow(np.maximum(x+B, 0)/(B_plus))
             plt.show()
 
     return x+B, total_loss
@@ -144,13 +147,13 @@ def loss(rep, target):
     """
     return np.linalg.norm(rep-target)**2/(np.linalg.norm(target)**2)
 
-def gradient(net, out):
+def gradient(net, layer, out):
     """
     Computes the gradient of the given out
 
 
     """
-    layer_names = net.get_layer_names()
+    layer_names = net.get_layer_names()[:net.get_layer_names().index(layer)+1]
 
     grad = 2*out
     layer_names.reverse()
