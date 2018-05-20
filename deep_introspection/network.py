@@ -25,9 +25,6 @@ class CaffeNet:
         if not self.predicted:
             return None
 
-        if layer == 'data' and self.img.shape == self.net.blobs['data'].data[0].shape:
-            return self.img
-
         return np.copy(self.net.blobs[layer].data[0])
 
     def get_layer_type(self, layer):
@@ -40,14 +37,12 @@ class CaffeNet:
 
 
     def predict(self, img):
-        self.img = img.transpose(2,1,0)
         self.predicted = True
         self.net.predict([img])
         return np.copy(self.net.blobs['prob'].data)
 
     def set_new_size(self, new_size):
         self.net.image_dims = new_size
-
 
     def get_layer_names(self) :
         """Gets the layer names of relevant networks in order

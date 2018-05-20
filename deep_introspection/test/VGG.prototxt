@@ -4,6 +4,7 @@ input_dim: 10
 input_dim: 3
 input_dim: 224
 input_dim: 224
+force_backward: true
 layers {
   bottom: "data"
   top: "conv1_1"
