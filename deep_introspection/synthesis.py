@@ -1,28 +1,52 @@
 import numpy as np
 from deep_introspection import im2col, lrp
 import matplotlib.pyplot as plt
+from scipy.misc import imread, imresize
 
 alpha = 6
 beta = 2
 m = 0.9
 B = 80
 B_plus = 2*B
-C = 1
 
 V = B/6.5
+C = 1
 l = 1/(224*224*B**alpha)
 l_tv = 1/(224*224*V**beta)
-
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
     x = B_plus*np.random.uniform(size=net.input_shape())-B
 
-    x[ymin:ymax+1,xmin:xmax+1,:] = img[ymin:ymax+1,xmin:xmax+1,:]
+    height = ymax-ymin+1
+    width = xmax-xmin+1
+
+
+    if height % 2 == 1:
+        height += 1
+        ymax += 1
+    if width % 2 == 1:
+        width += 1
+        xmax += 1
+    x[net.input_shape()[0]//2-height//2:net.input_shape()[0]//2+height//2,net.input_shape()[1]//2-width//2:net.input_shape()[1]//2+width//2,:] = img[ymin:ymax+1,xmin:xmax+1,:]
+
+    # resize code
+    # mod_img = np.copy(img)
+    #
+    # mean = np.array([103.939, 116.779, 123.68])
+    # mod_img[:,:,2] += mean[0]
+    # mod_img[:,:,1] += mean[1]
+    # mod_img[:,:,0] += mean[2]
+
+
+    #x = imresize(mod_img[ymin:ymax+1,xmin:xmax+1,:],net.input_shape()[:2]).astype('float64')
+    # x[:,:,2] -= mean[0]
+    # x[:,:,1] -= mean[1]
+    # x[:,:,0] -= mean[2]
+
     net.set_new_size(net.input_shape())
     net.predict(x)
 
     layer = net.get_layer_names()[-1]
     target = net.get_activations(layer)
-
     return synthesise(net, target)
 
 
@@ -44,20 +68,16 @@ def synthesise(net, target):
          t = np.percentile(x[:,:,i], 95)
          x[:,:,i] = x[:,:,i]/t * B/(3**0.5)
 
-    x = np.load('start.npy')
-
-    # clip pixel intensities
-    # pixel_intensities = np.sum(x**2, axis=2)**0.5
-    # x[pixel_intensities > B_plus] = (x[pixel_intensities > B_plus].T/(pixel_intensities[pixel_intensities > B_plus].T/B_plus)).T
+    #x = np.load('start.npy')
 
     layer = net.get_layer_names()[-1]
 
     net.set_new_size(x.shape[:2])
 
     initial_lr = 0.01*(B**2)/alpha
-    #initial_lr = 0.02
     g = 0
     mu = 0
+    T = 4
 
 
     net.predict(x)
@@ -69,14 +89,12 @@ def synthesise(net, target):
     print("Initial loss: " + str(rep_loss))
 
 
-
-
-    iterations = 400
+    iterations = 300
     for i in range(iterations):
 
-        # clip pixel intensities
-        # pixel_intensities = np.sum(x**2, axis=2)**0.5
-        # x[pixel_intensities > B_plus] = (x[pixel_intensities > B_plus].T/(pixel_intensities[pixel_intensities > B_plus].T/B_plus)).T
+        #clip pixel intensities
+        pixel_intensities = np.sum(x**2, axis=2)**0.5
+        x[pixel_intensities > B_plus] = (x[pixel_intensities > B_plus].T/(pixel_intensities[pixel_intensities > B_plus].T/B_plus)).T
 
         # adagrad
         loss_grad = C*gradient(net, layer, rep-target)/np.linalg.norm(rep-target)**2
@@ -87,7 +105,18 @@ def synthesise(net, target):
         lr = 1/(1/initial_lr+g**0.5)
         mu = m*mu - lr * grad
         x += B*mu
-        print(np.mean(np.abs(mu)))
+
+        t_1, t_2 = np.random.randint(low=0, high=T), np.random.randint(low=0, high=T)
+
+        jittered_x = np.zeros(x.shape)
+        if t_1 == 0 and t_2 == 0:
+            jittered_x[:,:,:] = x[t_1:,t_2:,:]
+        elif t_1 == 0:
+            jittered_x[:,:-t_2,:] = x[t_1:,t_2:,:]
+        elif t_2 == 0:
+            jittered_x[:-t_1,:,:] = x[t_1:,t_2:,:]
+        else:
+            jittered_x[:-t_1,:-t_2,:] = x[t_1:,t_2:,:]
 
         net.predict(x)
         rep = net.get_activations(layer)
@@ -103,7 +132,7 @@ def synthesise(net, target):
             plt.imshow(np.maximum(x+B, 0)/(B_plus))
             plt.show()
 
-    return x+B, total_loss
+    return x, total_loss
 
 def regularised(x):
     norm = np.sum((np.sum(x**2, 2)**(alpha/2)))
@@ -161,5 +190,4 @@ def gradient(net, layer, out):
     Computes the gradient of the given out
 
     """
-    net.net.blobs[layer].diff[0]=2*out
-    return np.copy(net.net.backward(start=layer)['data'][0]).transpose(1, 2, 0)
+    return net.backward(layer, 2*out)

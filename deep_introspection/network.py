@@ -59,11 +59,12 @@ class CaffeNet:
 
         return layer_names
 
-    def get_biases(self, layer):
-        return self.net.params[layer][1].data
-
     def input_shape(self):
         return self.net.blobs[self.get_layer_names()[0]].data[0].transpose(2, 1, 0).shape
+
+    def backward(self, layer, value):
+        self.net.blobs[layer].diff[0]=value
+        return np.copy(self.net.backward(start=layer)['data'][0]).transpose(1, 2, 0)
 
 class TensorFlowNet:
     sess = None
