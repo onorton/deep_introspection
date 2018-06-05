@@ -16,12 +16,19 @@ export default class FeedbackOverlay extends Component {
       occlusionSpeed: 3,
       occlusionFeatures: '',
       occlusionComments: '',
+      synthesisSupported: true,
+      synthesisSupport: null,
+      synthesisUseful: 3,
+      synthesisClose: 3,
+      synthesisFeatures: '',
+      synthesisComments: '',
       general: '',
     };
     this.handleInputChange = this.handleInputChange.bind(this);
     this.occlusionUseful = this.occlusionUseful.bind(this);
     this.occlusionSpeed = this.occlusionSpeed.bind(this);
-
+    this.synthesisUseful = this.synthesisUseful.bind(this);
+    this.synthesisClose = this.synthesisClose.bind(this);
   }
 
   occlusionUseful(event) {
@@ -30,6 +37,14 @@ export default class FeedbackOverlay extends Component {
 
   occlusionSpeed(event) {
     this.setState({othersModified: true, occlusionSpeed:event})
+  }
+
+  synthesisUseful(event) {
+    this.setState({othersModified: true, synthesisUseful:event})
+  }
+
+  synthesisClose(event) {
+    this.setState({othersModified: true, synthesisClose:event})
   }
 
   handleInputChange(event) {
@@ -48,7 +63,7 @@ export default class FeedbackOverlay extends Component {
  }
 
  readyToSubmit() {
-   return (this.state.occlusionFeatures != '' || this.state.occlusionComments != '' || this.state.general != '' || this.state.othersModified)
+   return (this.state.occlusionFeatures != '' || this.state.occlusionComments != '' || this.state.synthesisFeatures != '' || this.state.synthesisComments != ''  || this.state.general != '' || this.state.othersModified)
  }
 
   submit() {
@@ -111,10 +126,38 @@ export default class FeedbackOverlay extends Component {
               <textarea onChange={this.handleInputChange} name="occlusionFeatures" class="pt-input pt-fill" dir="auto"></textarea>
               <br/>
 
-              Do you have any other comments/suggestions for improvement of the occlusion tool?
+              <p>Do you have any other comments/suggestions for improvement of the occlusion tool?</p>
               <textarea onChange={this.handleInputChange} name="occlusionComments" class="pt-input pt-fill" dir="auto"></textarea>
               <br/>
+              <br/>
 
+              <h5>Synthesis Tool</h5>
+              <Checkbox className="pt-align-right" name="synthesisSupported" checked={this.state.synthesisSupported} onChange={this.handleInputChange}>Was the synthesis tool able to support your image/model choice?</Checkbox>
+             {(this.state.synthesisSupported) ? <div/> :<div><p>Which parts were unsupported?</p>
+               <RadioGroup
+                 name="synthesisSupport"
+                 onChange={this.handleInputChange}
+                 selectedValue={this.state.synthesisSupport}
+                 >
+                 <Radio label="Image" value="image" />
+                 <Radio label="Model" value="model" />
+                 <Radio label="Both" value="both" />
+                 </RadioGroup></div>}
+
+             <p>Was the synthesis tool useful? (1 being not useful at all and 5 being very useful)</p>
+             <Slider onChange={this.synthesisUseful} min={1} max={5} initialValue={1} value={this.state.synthesisUseful}/>
+
+             <p>How close were the synthesised features to the orignal features? (1 being not close at all and 5 being very close)</p>
+             <Slider onChange={this.synthesisClose} min={1} max={5} initialValue={1} value={this.state.synthesisClose}/>
+
+             <p>Was the synthesis tool able to pick out any interesting properties for these features? Mention them below:</p>
+             <textarea onChange={this.handleInputChange} name="synthesisFeatures" class="pt-input pt-fill" dir="auto"></textarea>
+             <br/>
+
+              <p>Do you have any other comments/suggestions for improvement of the synthesis tool?</p>
+              <textarea onChange={this.handleInputChange} name="synthesisComments" class="pt-input pt-fill" dir="auto"></textarea>
+              <br/>
+              <br/>
               <h5>General Comments</h5>
               If you have any other comments about the application, you can provide them here:<br/>
               <textarea onChange={this.handleInputChange} name="general" class="pt-input pt-fill" dir="auto"></textarea>
