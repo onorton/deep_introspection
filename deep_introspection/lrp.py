@@ -144,6 +144,7 @@ def forwardMax(x,k, shape):
 def backwardMax(s, x, k):
     x_reshaped = x.reshape((1,)+x.shape)
     x_reshaped = x_reshaped.reshape(x_reshaped.shape[1], 1, x_reshaped.shape[2], x_reshaped.shape[3])
+
     x_col = im2col.im2col_indices(x_reshaped, k, k, padding=0, stride=k)
 
     max_idx = np.argmax(x_col, axis=0)
