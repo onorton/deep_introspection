@@ -70,24 +70,28 @@ def predictions_from_features(net, img_path, inactive_features):
         mean = np.array([103.939, 116.779, 123.68])
 
 
-        for index in inactive_features:
+        for index in itertools.chain.from_iterable(inactive_features):
             img[index] = random_nums[index]-mean[2-index[2]]
         size = 4
+        start = time.time()
 
-        if len(inactive_features) > 0:
-            ymin = np.min(np.array(inactive_features)[:,0])
-            ymax = np.max(np.array(inactive_features)[:,0])
-            xmin = np.min(np.array(inactive_features)[:,1])
-            xmax = np.max(np.array(inactive_features)[:,1])
+        for cluster in inactive_features:
+            if len(cluster) > 0:
+                ymin = np.min(np.array(cluster)[:,0])
+                ymax = np.max(np.array(cluster)[:,0])
+                xmin = np.min(np.array(cluster)[:,1])
+                xmax = np.max(np.array(cluster)[:,1])
 
-            for i in range(ymin,ymax,size):
-                for j in range(xmin,xmax,size):
-                    for elem in inactive_features:
-                        if elem[0] < i+size and elem[0] >= i and  elem[1] < j+size and elem[1] >= j:
-                            img[i:i+size,j:j+size,0] = np.mean(img[i:i+size,j:j+size,0])
-                            img[i:i+size,j:j+size,1] = np.mean(img[i:i+size,j:j+size,1])
-                            img[i:i+size,j:j+size,2] = np.mean(img[i:i+size,j:j+size,2])
-                            break
+                for i in range(ymin,ymax,size):
+                    for j in range(xmin,xmax,size):
+                        for elem in cluster:
+                            if elem[0] < i+size and elem[0] >= i and  elem[1] < j+size and elem[1] >= j:
+                                img[i:i+size,j:j+size,0] = np.mean(img[i:i+size,j:j+size,0])
+                                img[i:i+size,j:j+size,1] = np.mean(img[i:i+size,j:j+size,1])
+                                img[i:i+size,j:j+size,2] = np.mean(img[i:i+size,j:j+size,2])
+                                break
+
+        print(time.time()-start)
 
         predictions = net.predict(img)
         predictions = np.mean(predictions, axis=0)
@@ -185,8 +189,8 @@ def evaluate(request, model, image):
     body = json.loads(request.body.decode("utf-8"))
     inactive_indices = body['inactiveFeatures']
     clusters = read_clusters(features_path)
-    inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
-    inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+    inactive_features = [clusters[i] for i in inactive_indices]
+    inactive_features = list(map(lambda cluster: list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster))), inactive_features))
 
     img_path = TestImage.objects.filter(id=image).first().image
     test_model = TestModel.objects.filter(id=model).first()
