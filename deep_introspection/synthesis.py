@@ -100,9 +100,7 @@ def synthesise(net, target, img):
         print("Total loss:" + str(total_loss) + ", TV loss: " + str(tv(x)))
         print("Loss: " + str(rep_loss) + " Change: " + str(rep_loss-prev_loss))
 
-        if (i+1)%100 == 0:
-            plt.imshow(np.maximum(x+B, 0)/(B_plus))
-            plt.show()
+        
 
     return x, total_loss
 
