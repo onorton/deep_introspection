@@ -65,7 +65,6 @@ def predictions_from_features(net, img_path, inactive_features):
         img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
         net.set_new_size(newSize)
 
-        start = time.time()
         random_nums = 256*np.random.uniform(size=img.shape)
 
         mean = np.array([103.939, 116.779, 123.68])
@@ -75,19 +74,21 @@ def predictions_from_features(net, img_path, inactive_features):
             img[index] = random_nums[index]-mean[2-index[2]]
         size = 4
 
-        ymin = np.min(np.array(inactive_features)[:,0])
-        ymax = np.max(np.array(inactive_features)[:,0])
-        xmin = np.min(np.array(inactive_features)[:,1])
-        xmax = np.max(np.array(inactive_features)[:,1])
+        if len(inactive_features) > 0:
+            ymin = np.min(np.array(inactive_features)[:,0])
+            ymax = np.max(np.array(inactive_features)[:,0])
+            xmin = np.min(np.array(inactive_features)[:,1])
+            xmax = np.max(np.array(inactive_features)[:,1])
 
-        for i in range(ymin,ymax,size):
-            for j in range(xmin,xmax,size):
-                indices_range = [(x+i,y+j,c) for x in range(size) for y in range(size) for c in range(3)]
-                if any([elem for elem in inactive_features if elem[0] < i+size and elem[0] >= i and  elem[1] < j+size and elem[1] >= j]):
-                    img[i:i+size,j:j+size,0] = np.mean(img[i:i+size,j:j+size,0])
-                    img[i:i+size,j:j+size,1] = np.mean(img[i:i+size,j:j+size,1])
-                    img[i:i+size,j:j+size,2] = np.mean(img[i:i+size,j:j+size,2])
-        print(time.time()-start)
+            for i in range(ymin,ymax,size):
+                for j in range(xmin,xmax,size):
+                    for elem in inactive_features:
+                        if elem[0] < i+size and elem[0] >= i and  elem[1] < j+size and elem[1] >= j:
+                            img[i:i+size,j:j+size,0] = np.mean(img[i:i+size,j:j+size,0])
+                            img[i:i+size,j:j+size,1] = np.mean(img[i:i+size,j:j+size,1])
+                            img[i:i+size,j:j+size,2] = np.mean(img[i:i+size,j:j+size,2])
+                            break
+
         predictions = net.predict(img)
         predictions = np.mean(predictions, axis=0)
 
@@ -199,7 +200,10 @@ def evaluate(request, model, image):
     else:
         net = network.CaffeNet(architecture, weights)
 
+    start = time.time()
     predictions, img = predictions_from_features(net, img_path, inactive_features)
+    print(time.time()-start)
+
     top_predictions = get_top_predictions(predictions, 5, labels)
     # save modified image
     img = Image.fromarray(np.uint8(img))
