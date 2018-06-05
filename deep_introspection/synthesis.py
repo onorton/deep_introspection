@@ -10,7 +10,7 @@ B = 80
 B_plus = 2*B
 
 V = B/6.5
-C = 1
+C = 1/6.5
 l = 1/(224*224*B**alpha)
 l_tv = 1/(224*224*V**beta)
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
@@ -28,29 +28,15 @@ def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
         xmax += 1
     x[net.input_shape()[0]//2-height//2:net.input_shape()[0]//2+height//2,net.input_shape()[1]//2-width//2:net.input_shape()[1]//2+width//2,:] = img[ymin:ymax+1,xmin:xmax+1,:]
 
-    # resize code
-    # mod_img = np.copy(img)
-    #
-    # mean = np.array([103.939, 116.779, 123.68])
-    # mod_img[:,:,2] += mean[0]
-    # mod_img[:,:,1] += mean[1]
-    # mod_img[:,:,0] += mean[2]
-
-
-    #x = imresize(mod_img[ymin:ymax+1,xmin:xmax+1,:],net.input_shape()[:2]).astype('float64')
-    # x[:,:,2] -= mean[0]
-    # x[:,:,1] -= mean[1]
-    # x[:,:,0] -= mean[2]
-
     net.set_new_size(net.input_shape())
     net.predict(x)
 
     layer = net.get_layer_names()[-1]
     target = net.get_activations(layer)
-    return synthesise(net, target)
+    return synthesise(net, target, x)
 
 
-def synthesise(net, target):
+def synthesise(net, target, img):
     """
     Find an image whose representation in the network is as close as possible
     to the representation given.
@@ -77,8 +63,6 @@ def synthesise(net, target):
     initial_lr = 0.01*(B**2)/alpha
     g = 0
     mu = 0
-    T = 4
-
 
     net.predict(x)
     rep = net.get_activations(layer)
@@ -105,18 +89,6 @@ def synthesise(net, target):
         lr = 1/(1/initial_lr+g**0.5)
         mu = m*mu - lr * grad
         x += B*mu
-
-        t_1, t_2 = np.random.randint(low=0, high=T), np.random.randint(low=0, high=T)
-
-        jittered_x = np.zeros(x.shape)
-        if t_1 == 0 and t_2 == 0:
-            jittered_x[:,:,:] = x[t_1:,t_2:,:]
-        elif t_1 == 0:
-            jittered_x[:,:-t_2,:] = x[t_1:,t_2:,:]
-        elif t_2 == 0:
-            jittered_x[:-t_1,:,:] = x[t_1:,t_2:,:]
-        else:
-            jittered_x[:-t_1,:-t_2,:] = x[t_1:,t_2:,:]
 
         net.predict(x)
         rep = net.get_activations(layer)
