@@ -83,7 +83,7 @@ def predictions_from_features(net, img_path, inactive_features):
         for i in range(ymin,ymax,size):
             for j in range(xmin,xmax,size):
                 indices_range = [(x+i,y+j,c) for x in range(size) for y in range(size) for c in range(3)]
-                if any([elem for elem in indices_range if elem in inactive_features]):
+                if any([elem for elem in inactive_features if elem[0] < i+size and elem[0] >= i and  elem[1] < j+size and elem[1] >= j]):
                     img[i:i+size,j:j+size,0] = np.mean(img[i:i+size,j:j+size,0])
                     img[i:i+size,j:j+size,1] = np.mean(img[i:i+size,j:j+size,1])
                     img[i:i+size,j:j+size,2] = np.mean(img[i:i+size,j:j+size,2])
