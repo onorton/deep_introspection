@@ -6,7 +6,7 @@ import os
 train = 8192
 test = 1024
 
-size = 224
+size = 112
 
 
 def random_quad_matrix():
@@ -60,7 +60,7 @@ def generate_noisy_image():
     im = Image.fromarray(np.uint8(im))
     return im
 def generate_quad():
-    points = np.array([[87,87,1],[87,137,1],[137,137,1],[137,87,1]])
+    points = np.array([[49,49,1],[49,74,1],[74,74,1],[74,49,1]])
     points[:,0:2] -= size//2
     points = points.transpose()
 
@@ -75,10 +75,11 @@ def generate_quad():
     im = generate_noisy_image()
     draw = ImageDraw.Draw(im)
     draw.polygon(point_list, fill=(255,255,255))
-    return im
+    im = np.mean(im,axis=2)
+    return Image.fromarray(np.uint8(im))
 
 def generate_ellipse():
-    points = np.array([[87,87,1],[137,137,1]])
+    points = np.array([[49,49,1],[74,74,1]])
     points[:,0:2] -= size//2
     points = points.transpose()
 
@@ -101,6 +102,7 @@ def generate_ellipse():
     indices = np.argwhere(im.flatten() > 0)
     bg[indices] = 255
     bg = bg.reshape((size,size,3))
+    bg = np.mean(bg,axis=2)
     return Image.fromarray(np.uint8(bg))
 
 if not os.path.exists('data/test'):

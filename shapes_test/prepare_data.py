@@ -34,15 +34,47 @@ def create_lmdb(set):
                     str_id = ''
                     if re.search(r'quad_[0-9]+\.jpg', file) :
                         datum.label = 0
-                        print("sup1")
                         str_id = 'quad_{:08}'.format(i)
                     else :
                         datum.label = 1
-                        print("sup2")
                         str_id = 'ellipse_{:08}'.format(i)
                     i+=1
 
                     txn.put(str_id.encode('ascii'), datum.SerializeToString())
-create_lmdb('train')
 
+def create_npy(set):
+    path = os.getcwd()+"\\data\\" + set + "\\"
+
+    number_files = 0
+    for _, dirnames, filenames in os.walk(path):
+        number_files += len(filenames)
+
+    images = np.zeros((number_files,112,112)).astype('float32')
+    labels = np.zeros(number_files)
+
+
+    i = 0
+    for root, dirs, files in os.walk(path):
+        random.shuffle(files)
+        for file in files:
+            if file.endswith(".jpg"):
+                im = Image.open(os.path.join(root, file))
+                im = np.array(im)
+                images[i] = im
+                if re.search(r'quad_[0-9]+\.jpg', file) :
+                    labels[i] = 0
+                else :
+                    labels[i] = 1
+                i+=1
+                if i%100 == 0:
+                    print(str(i) + ' examples processed.')
+    print("Saving images...")
+    np.save(set+'_images.npy', images)
+    print("Images saved.")
+    print("Saving labels...")
+    np.save(set+'_labels.npy', labels)
+    print("Labels saved.")
+create_npy('train')
+create_npy('test')
+create_lmdb('train')
 create_lmdb('test')
