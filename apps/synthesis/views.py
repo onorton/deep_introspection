@@ -57,6 +57,10 @@ def synthesise(request, model, image, feature):
         xmax, ymax, xmin, ymin = np.max(cluster[:,0]), np.max(cluster[:,1]), np.min(cluster[:,0]), np.min(cluster[:,1])
 
         feature_img, _ = synthesis.synthesise_boundary(net, img, xmax, ymax, xmin, ymin)
+        mean = np.array([103.939, 116.779, 123.68])
+        feature_img[:,:,0] += mean[2]
+        feature_img[:,:,1] += mean[1]
+        feature_img[:,:,2] += mean[0]
 
         num = FeatureImage.objects.filter(model__id=model,image__id=image,feature=feature).count()
 
