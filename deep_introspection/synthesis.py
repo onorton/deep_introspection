@@ -10,9 +10,10 @@ B = 80
 B_plus = 2*B
 
 V = B/6.5
-C = 1/6.5
+C = 1
 l = 1/(224*224*B**alpha)
 l_tv = 1/(224*224*V**beta)
+
 def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
     x = B_plus*np.random.uniform(size=net.input_shape())-B
 
@@ -27,6 +28,7 @@ def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
         width += 1
         xmax += 1
     x[net.input_shape()[0]//2-height//2:net.input_shape()[0]//2+height//2,net.input_shape()[1]//2-width//2:net.input_shape()[1]//2+width//2,:] = img[ymin:ymax+1,xmin:xmax+1,:]
+
 
     net.set_new_size(net.input_shape())
     net.predict(x)
@@ -81,9 +83,8 @@ def synthesise(net, target, img):
         x[pixel_intensities > B_plus] = (x[pixel_intensities > B_plus].T/(pixel_intensities[pixel_intensities > B_plus].T/B_plus)).T
 
         # adagrad
-        loss_grad = C*gradient(net, layer, rep-target)/np.linalg.norm(rep-target)**2
+        loss_grad = C*gradient(net, layer, rep-target)/np.linalg.norm(target)**2
         grad = loss_grad + l*norm_grad(x) + l_tv*tv_grad(x)
-        print(np.linalg.norm(loss_grad), np.linalg.norm(l*norm_grad(x)), np.linalg.norm(l_tv*tv_grad(x)))
 
         g = m*g + grad**2
         lr = 1/(1/initial_lr+g**0.5)
@@ -99,8 +100,6 @@ def synthesise(net, target, img):
         print("Iteration " + str(i) + ": " + str(np.mean(lr)))
         print("Total loss:" + str(total_loss) + ", TV loss: " + str(tv(x)))
         print("Loss: " + str(rep_loss) + " Change: " + str(rep_loss-prev_loss))
-
-        
 
     return x, total_loss
 

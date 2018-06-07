@@ -26,6 +26,8 @@ import matplotlib.pyplot as plt
 
 import math
 
+import time
+
 from PIL import Image
 
 def get_top_predictions(predictions, num, labels):
@@ -53,11 +55,8 @@ def predictions_from_features(net, img_path, inactive_features):
 
         random_nums = 256*np.random.uniform(size=img.shape)
 
-        for index in inactive_features:
+        for index in itertools.chain.from_iterable(inactive_features):
             img[index] = random_nums[index]
-
-        predictions = net.predict(img)
-        predictions = np.mean(predictions, axis=0)
 
     else:
         img, offset, resFac, newSize = utils.imgPreprocess(img_path=img_path)
@@ -67,12 +66,34 @@ def predictions_from_features(net, img_path, inactive_features):
 
         mean = np.array([103.939, 116.779, 123.68])
 
-        for index in inactive_features:
+
+        for index in itertools.chain.from_iterable(inactive_features):
             img[index] = random_nums[index]-mean[2-index[2]]
 
-        predictions = net.predict(img)
-        predictions = np.mean(predictions, axis=0)
+    size = 4
+    start = time.time()
 
+    for cluster in inactive_features:
+        if len(cluster) > 0:
+            ymin = np.min(np.array(cluster)[:,0])
+            ymax = np.max(np.array(cluster)[:,0])
+            xmin = np.min(np.array(cluster)[:,1])
+            xmax = np.max(np.array(cluster)[:,1])
+
+            for i in range(ymin,ymax,size):
+                for j in range(xmin,xmax,size):
+                    for elem in cluster:
+                        if elem[0] < i+size and elem[0] >= i and  elem[1] < j+size and elem[1] >= j:
+                            img[i:i+size,j:j+size,0] = np.mean(img[i:i+size,j:j+size,0])
+                            img[i:i+size,j:j+size,1] = np.mean(img[i:i+size,j:j+size,1])
+                            img[i:i+size,j:j+size,2] = np.mean(img[i:i+size,j:j+size,2])
+                            break
+
+
+    predictions = net.predict(img)
+    predictions = np.mean(predictions, axis=0)
+
+    if isinstance(net, network.CaffeNet):
         img[:, :, 0] += mean[2]
         img[:, :, 1] += mean[1]
         img[:, :, 2] += mean[0]
@@ -131,7 +152,7 @@ def index(request, model, image):
         sorted_predictions = []
         for i in range(len(clusters)):
             cluster = list(itertools.chain.from_iterable(map(lambda x: [x+(0,),x+(1,),x+(2,)], clusters[i])))
-            predictions, _ = predictions_from_features(net, img_path, cluster)
+            predictions, _ = predictions_from_features(net, img_path, [cluster])
             diff = predicted['value'] - predictions[predicted['index']]
             sorted_predictions.append({'index':i,'difference':diff})
 
@@ -166,8 +187,8 @@ def evaluate(request, model, image):
     body = json.loads(request.body.decode("utf-8"))
     inactive_indices = body['inactiveFeatures']
     clusters = read_clusters(features_path)
-    inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
-    inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+    inactive_features = [clusters[i] for i in inactive_indices]
+    inactive_features = list(map(lambda cluster: list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster))), inactive_features))
 
     img_path = TestImage.objects.filter(id=image).first().image
     test_model = TestModel.objects.filter(id=model).first()
@@ -181,7 +202,10 @@ def evaluate(request, model, image):
     else:
         net = network.CaffeNet(architecture, weights)
 
+    start = time.time()
     predictions, img = predictions_from_features(net, img_path, inactive_features)
+    print(time.time()-start)
+
     top_predictions = get_top_predictions(predictions, 5, labels)
     # save modified image
     img = Image.fromarray(np.uint8(img))
@@ -219,8 +243,9 @@ def analyse(request, model, image):
         b = [i >> j & 1 for j in range(i.bit_length()-1,-1,-1)]
         b = [0] * (num_clusters-len(b)) + b
         inactive_indices = list(itertools.compress(range(num_clusters), b))
-        inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
-        inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+        inactive_features = [clusters[i] for i in inactive_indices]
+        inactive_features = list(map(lambda cluster: list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster))), inactive_features))
+
 
         predictions, img =  predictions_from_features(net, img_path, inactive_features)
         change = predicted['value'] - predictions[predicted['index']]
@@ -228,8 +253,9 @@ def analyse(request, model, image):
             largest_change = change
             features = inactive_indices
 
-    inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
-    inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+    inactive_features = [clusters[i] for i in inactive_indices]
+    inactive_features = list(map(lambda cluster: list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster))), inactive_features))
+
     predictions, img =  predictions_from_features(net, img_path, inactive_features)
 
     img = Image.fromarray(np.uint8(img))
@@ -244,14 +270,14 @@ def analyse(request, model, image):
     for i in range(num_clusters):
         cluster = clusters[i]
         inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster)))
-        predictions, _ =  predictions_from_features(net, img_path, inactive_features)
+        predictions, _ =  predictions_from_features(net, img_path, [inactive_features])
         change = predicted['value'] - predictions[predicted['index']]
         if change > biggest_change:
             biggest_change = change
             biggest_feature = i
 
     inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], clusters[biggest_feature])))
-    predictions, img =  predictions_from_features(net, img_path, inactive_features)
+    predictions, img =  predictions_from_features(net, img_path, [inactive_features])
     img = Image.fromarray(np.uint8(img))
     modification_path = 'features/model_'+ str(model) + '_image_' + str(image) + '_' + str(biggest_feature) + '.jpg'
     img.save(modification_path)
@@ -266,7 +292,7 @@ def analyse(request, model, image):
         if num == 0:
             inactive_features = list(itertools.chain.from_iterable(clusters))
             inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
-            predictions, img =  predictions_from_features(net, img_path, inactive_features)
+            predictions, img =  predictions_from_features(net, img_path, [inactive_features])
             top_predictions = get_top_predictions(predictions, 5, labels)
             # No features are required
             if top_predictions[0]['index'] == predicted['index']:
@@ -278,8 +304,9 @@ def analyse(request, model, image):
             combinations = itertools.combinations(range(num_clusters), num)
             for selection in combinations:
                 inactive_indices = list(set(range(num_clusters)) - set(selection))
-                inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
-                inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+                inactive_features = [clusters[i] for i in inactive_indices]
+                inactive_features = list(map(lambda cluster: list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster))), inactive_features))
+
 
                 predictions, img =  predictions_from_features(net, img_path, inactive_features)
                 top_predictions = get_top_predictions(predictions, 5, labels)
@@ -305,8 +332,9 @@ def analyse(request, model, image):
         combinations = itertools.combinations(range(num_clusters), num)
         for selection in combinations:
             inactive_indices = list(selection)
-            inactive_features = list(itertools.chain.from_iterable([clusters[i] for i in inactive_indices]))
-            inactive_features = list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], inactive_features)))
+            inactive_features = [clusters[i] for i in inactive_indices]
+            inactive_features = list(map(lambda cluster: list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster))), inactive_features))
+
 
             predictions, img =  predictions_from_features(net, img_path, inactive_features)
             top_predictions = get_top_predictions(predictions, 5, labels)
