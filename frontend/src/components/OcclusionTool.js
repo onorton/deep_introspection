@@ -147,12 +147,15 @@ export default class OcclusionTool extends Component {
             </svg>
           </div>
         </div>: <div/>
-      : <div><OcclusionResult
+      : <div>
+      <br/>
+      <OcclusionResult
       features={this.state.features.map(function(feature) {return feature.feature})}
       testModel={this.props.testModel}
       testImage={this.props.testImage}
       style={{width: 750, marginLeft:'auto',marginRight:'auto'}}
       results={this.state.results}/>
+
       <OcclusionFeedback isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} originalClass={this.state.results.originalClass} onClose={() => this.setState({feedback:false})}/>
       <label className="pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label></div>
       }

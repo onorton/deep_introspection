@@ -19,26 +19,30 @@ export default class OcclusionResult extends Component {
     <div style={this.props.style}>
     <h4>Occlusion Analysis</h4>
     The original class predicted for this image was {this.props.results.originalClass}.
-
+    <br/>
     <h5>Largest Change in Prediction</h5>
-    The features that are occluded to produce the largest change in probability for {this.props.results.originalClass} are {this.props.results.lc.features +'.'}
+    <p>After 10 samples, the features that are occluded to produce the largest change in probability for {this.props.results.originalClass} are {this.props.results.lc.features +'.'}</p>
     <img src={this.occlusionsToUrl(this.props.results.lc.features)} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.lc.predictions}/>
+    <br/>
 
     <h5>Most Important Feature</h5>
-    The single feature that produces the largest change in probability for {this.props.results.originalClass} is feature {this.props.results.mi.feature}.
+    <p>The single feature that produces the largest change in probability for {this.props.results.originalClass} is feature {this.props.results.mi.feature}.</p>
     <img src={this.occlusionsToUrl([this.props.results.mi.feature])} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.mi.predictions}/>
+    <br/>
 
     <h5>Minimal Features Required</h5>
-    The minimal features required to still predict {this.props.results.originalClass} are {(this.props.results.mfRequired.features.length > 0) ? this.props.results.mfRequired.features + '.' : 'none of those found.'}
+    <p>The minimal features required to still predict {this.props.results.originalClass} are {(this.props.results.mfRequired.features.length > 0) ? this.props.results.mfRequired.features + '.' : 'none of those found.'}</p>
     <img src={this.occlusionsToUrl(difference(this.props.features, this.props.results.mfRequired.features))} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.mfRequired.predictions}/>
+    <br/>
 
     <h5>Minimal Features Perturbation</h5>
-    The minimal features that need to be occluded so {this.props.results.originalClass} is not predicted are {this.props.results.mfPerturbation.features + '.'}
+    <p>The minimal features that need to be occluded so {this.props.results.originalClass} is not predicted are {this.props.results.mfPerturbation.features + '.'}</p>
     <img src={this.occlusionsToUrl(this.props.results.mfPerturbation.features)} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.mfPerturbation.predictions}/>
+    <br/>
     </div>
     )
   }
