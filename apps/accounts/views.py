@@ -16,13 +16,13 @@ def index(request):
         user = User.objects.create_user(body['username'], password=body['password'])
         user.save()
         login(request, user)
-        return HttpResponse("{\"user\": " + str(user.id) + "}")
+        return  HttpResponse("{\"user\": {\"id\":"  + str(user.id) + ", \"username\": \"" + user.username + "\"}}")
 
 @csrf_exempt
 def login_user(request):
     if request.method == 'POST':
         if request.user.is_authenticated:
-            return HttpResponse("{\"user\": " + str(request.user.id) + "}")
+            return  HttpResponse("{\"user\": {\"id\":"  + str(request.user.id) + ", \"username\": \"" + request.user.username + "\"}}")
 
         body = json.loads(request.body.decode("utf-8"))
         username = body['username']
@@ -30,7 +30,7 @@ def login_user(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return HttpResponse("{\"user\": " + str(user.id) + "}")
+            return HttpResponse("{\"user\": {\"id\":"  + str(user.id) + ", \"username\": \"" + user.username + "\"}}")
         else:
             return HttpResponse("{}", status=400)
 

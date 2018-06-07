@@ -19,7 +19,8 @@ class App extends Component {
       testImage: null,
       testModel: null,
       feedback: false,
-      user: null
+      user: null,
+      username: null
     };
   }
 
@@ -50,13 +51,15 @@ class App extends Component {
   }
 
   render() {
+    console.log(this.state.user)
     return (
       <div className="App">
         <header className="App-header">
           <h1 className="App-title" style={{color:'#FFFFFF'}}>Deep Introspection</h1>
-          <label style={{float:'right'}}className="pt-file-upload pt-button pt-icon-log-out pt-intent-primary " onClick={() => {this.logout()}}>Logout</label>
+
+        <div style={{color:'#FFFFFF',float:'right'}}>Hello, {this.state.username != null ? this.state.username:'guest'}<label style={{marginLeft:5}} className="pt-file-upload pt-button pt-icon-log-out pt-intent-primary " onClick={() => {this.logout()}}>Logout</label></div>
         </header>
-        <LoginOverlay isOpen={this.state.user == null} callbackParent={(user) => this.setState({user:user})}/>
+        <LoginOverlay isOpen={this.state.user == null} callbackParent={(user) => this.setState({user:user.id,username:user.username})}/>
         <div className="main-content" style={{position:"absolute", paddingLeft: 260, top: 125, width:"100%" }}>
           {(this.state.testImage != null && this.state.testModel != null) ? <ToolCollection testImage={this.state.testImage} testModel={this.state.testModel}/> : <div/>}
         </div>
