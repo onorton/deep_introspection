@@ -98,6 +98,13 @@ def heatmap(img, points, sigma=20):
     blur = blur*255/np.max(blur)
     return blur
 
+def obtain_heatmap(points, img):
+    diag_percent= 0.1
+    diag = math.sqrt(img.shape[0]**2 + img.shape[1]**2)*diag_percent
+    values = np.asarray(points)
+    selPoints = outlier_removal(values, diag)
+    return heatmap(np.copy(img), selPoints)
+
 
 def visualize(img_path, points, diag_percent, image_label):
     img = cv2.imread(img_path)
