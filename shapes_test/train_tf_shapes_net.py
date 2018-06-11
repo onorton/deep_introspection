@@ -5,6 +5,7 @@ def cnn_model_fn(features, labels, mode):
   """Model function for CNN."""
   # Input Layer
   input_layer = tf.reshape(features["x"], [-1, 112, 112, 1])
+  input_layer = tf.subtract(input_layer, 133.45894)
   # Convolutional Layer #1
   conv1 = tf.layers.conv2d(
       inputs=input_layer,
@@ -19,7 +20,7 @@ def cnn_model_fn(features, labels, mode):
   conv2 = tf.layers.conv2d(
         inputs=pool1,
         filters=64,
-        kernel_size=[7, 7],
+        kernel_size=[5, 5],
         padding="same",
         activation=tf.nn.relu)
   pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
