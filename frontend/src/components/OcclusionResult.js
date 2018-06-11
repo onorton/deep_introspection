@@ -39,10 +39,12 @@ export default class OcclusionResult extends Component {
     <br/>
 
     <h5>Minimal Features Perturbation</h5>
+    {ths.props.results.mfPerturbation.features == [] ? None of the features can be occluded to change the top class prediction. :
     <p>The minimal features that need to be occluded so {this.props.results.originalClass} is not predicted are {this.props.results.mfPerturbation.features + '.'}</p>
     <img src={this.occlusionsToUrl(this.props.results.mfPerturbation.features)} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.mfPerturbation.predictions}/>
     <br/>
+    }
     </div>
     )
   }

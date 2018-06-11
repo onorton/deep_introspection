@@ -352,6 +352,8 @@ def analyse(request, model, image):
         if features_found:
             break
 
+    if not features_found:
+        selection = []
     mfPerturbation = {'features': selection, 'predictions': top_predictions}
 
     results = {'originalClass':predicted['label'],
