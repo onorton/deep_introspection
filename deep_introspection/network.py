@@ -60,11 +60,18 @@ class CaffeNet:
         return layer_names
 
     def input_shape(self):
-        return self.net.blobs[self.get_layer_names()[0]].data[0].transpose(2, 1, 0).shape
+        return self.net.blobs[self.get_layer_names()[0]].data[0].transpose(1, 2, 0).shape
 
     def backward(self, layer, value):
         self.net.blobs[layer].diff[0]=value
-        return np.copy(self.net.backward(start=layer)['data'][0]).transpose(1, 2, 0)
+        grad = np.copy(self.net.backward(start=layer)['data'][0]).transpose(1, 2, 0)
+
+        # gradient swap
+        temp = np.copy(grad[:,:,0])
+        grad[:,:,0] = grad[:,:,2]
+        grad[:,:,2] = temp
+
+        return grad
 
 class TensorFlowNet:
     sess = None
