@@ -103,14 +103,14 @@ class TensorFlowNet:
         probs = self.sess.graph.get_operation_by_name('Softmax').values()
 
         layer_type = self.get_layer_type(layer)
-        if layer_type == 'Convolution' or layer_type == 'Pooling':
+        if layer_type == 'Convolution' or layer_type == 'Pooling' or layer_type == 'Input':
             layer = self.sess.graph.get_operation_by_name(layer).values()
         else:
             layer = self.sess.graph.get_operation_by_name(layer+'/Relu').values()
 
         layer = self.sess.run(layer, feed_dict={placeholder: [self.img]})[0][0]
 
-        if layer_type == 'Convolution' or layer_type == 'Pooling':
+        if layer_type == 'Convolution' or layer_type == 'Pooling' or layer_type == 'Input':
             return layer.transpose(2, 0, 1)
 
         return layer
