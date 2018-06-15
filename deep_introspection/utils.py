@@ -12,6 +12,10 @@ def imageResize(img, size=224):
     img = transform.resize(img, newSize, mode='constant')
     return img
 
+def shapenetPreprocess(img_path):
+    img = img_as_float(io.imread(img_path)).astype(np.float32)
+    img = (255*img - 133.4984).reshape(img.shape[0],img.shape[1],1)
+    return img, img.shape[:2]
 
 def imagePreprocess(img, size=224):
     # Resize factor, smallest edge to 256.
