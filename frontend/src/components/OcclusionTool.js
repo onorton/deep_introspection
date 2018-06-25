@@ -115,6 +115,8 @@ export default class OcclusionTool extends Component {
       <label className="pt-button pt-intent-primary pt-large " onClick={() => {this.analyse()}}>Analyse</label>
     </Tooltip>
     </div>
+
+
     <ul style={{listStyleType: 'none', padding: 0, marginLeft:10, float:'left'}}>
     {this.state.features.length == 0 ?
       placeholderFeatures.map(function(feature, index) {
@@ -138,30 +140,32 @@ export default class OcclusionTool extends Component {
     <Predictions predictions={this.state.predictions}/>
     </div>
 
-    {(this.state.results == null) ?
-        (this.state.analysing) ?
-        <div class="pt-spinner pt-large">
-          <div class="pt-spinner-svg-container" style={{left:165, top:30}}>
-            <svg viewBox="0 0 100 100">
-              <path class="pt-spinner-track" d="M 50,50 m 0,-44.5 a 44.5,44.5 0 1 1 0,89 a 44.5,44.5 0 1 1 0,-89"></path>
-              <path class="pt-spinner-head" d="M 94.5 50 A 44.5 44.5 0 0 0 50 5.5"></path>
-            </svg>
-          </div>
-        </div>: <div/>
-      :
-      <div>
-      <br/>
-      <OcclusionResult
-      features={this.state.features.map(function(feature) {return feature.feature})}
-      testModel={this.props.testModel}
-      testImage={this.props.testImage}
-      style={{width:750,marginLeft:'auto',marginRight:'auto'}}
-      results={this.state.results}/>
 
-      <OcclusionFeedback isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} originalClass={this.state.results.originalClass} onClose={() => this.setState({feedback:false})}/>
-      <label className="pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label>
-      </div>
-      }
+        {(this.state.results == null) ?
+            (this.state.analysing) ?
+            <div class="pt-spinner pt-large">
+              <div class="pt-spinner-svg-container" style={{left:165, top:30}}>
+                <svg viewBox="0 0 100 100">
+                  <path class="pt-spinner-track" d="M 50,50 m 0,-44.5 a 44.5,44.5 0 1 1 0,89 a 44.5,44.5 0 1 1 0,-89"></path>
+                  <path class="pt-spinner-head" d="M 94.5 50 A 44.5 44.5 0 0 0 50 5.5"></path>
+                </svg>
+              </div>
+            </div>: <div/>
+          :
+          <Scrollbars  style={{height:730,width:600,left:165, marginLeft:'auto',marginRight:'auto',position:'relative'}}>
+          <br/>
+          <OcclusionResult
+          features={this.state.features.map(function(feature) {return feature.feature})}
+          testModel={this.props.testModel}
+          testImage={this.props.testImage}
+          results={this.state.results}/>
+
+          <OcclusionFeedback isOpen={this.state.feedback} image={this.props.testImage} model={this.props.testModel} originalClass={this.state.results.originalClass} onClose={() => this.setState({feedback:false})}/>
+          <label className="pt-button pt-intent-primary pt-large" onClick={() => {this.setState({feedback:true})}}>Feedback</label>
+          </Scrollbars>
+          }
+
+
 
     </div>
     )
