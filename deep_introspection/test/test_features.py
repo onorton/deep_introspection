@@ -16,7 +16,7 @@ def test_captures_disctinct_features():
 
     net = network.CaffeNet('deep_introspection/test/VGG.prototxt', 'deep_introspection/test/VGG_ILSVRC_16_layers.caffemodel')
 
-    img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/cat.jpg')
+    img, offset, resFac, newSize = utils.imgPreprocess(img_path='deep_introspection/test/starfish.jpg')
     net.set_new_size(newSize)
     relevances = lrp.calculate_lrp_heatmap(net, img)
 

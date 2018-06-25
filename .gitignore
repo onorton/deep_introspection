@@ -81,12 +81,9 @@ shapes_test/qe_train_lmdb/*
 shapes_test/qe_test_lmdb/*
 shapes_test/snapshots/*
 
-# test images
-deep_introspection/test/*.jpg
 
 # test models
 deep_introspection/test/*.caffemodel
 
 # Django secret file
 secret.txt
-

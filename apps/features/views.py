@@ -202,9 +202,7 @@ def evaluate(request, model, image):
     else:
         net = network.CaffeNet(architecture, weights)
 
-    start = time.time()
     predictions, img = predictions_from_features(net, img_path, inactive_features)
-    print(time.time()-start)
 
     top_predictions = get_top_predictions(predictions, 5, labels)
     # save modified image
@@ -240,7 +238,7 @@ def analyse(request, model, image):
     largest_change = 0
     features = []
 
-    for i in range(10):
+    for i in range(1):
         num = np.random.randint(low=0,high=2**num_clusters)
         b = [num >> j & 1 for j in range(num.bit_length()-1,-1,-1)]
         b = [0] * (num_clusters-len(b)) + b
@@ -256,7 +254,6 @@ def analyse(request, model, image):
             largest_change = change
             features = inactive_indices
 
-    print(features)
     inactive_features = [clusters[i] for i in features]
     inactive_features = list(map(lambda cluster: list(itertools.chain.from_iterable(map(lambda x: [tuple(x+[0]),tuple(x+[1]),tuple(x+[2])], cluster))), inactive_features))
 

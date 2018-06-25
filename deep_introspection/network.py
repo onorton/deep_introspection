@@ -11,8 +11,7 @@ class CaffeNet:
     img = None
 
     def __init__(self, architecture, weights):
-        self.net = caffe.Classifier(architecture, weights, caffe.TEST,channel_swap=(2,1,0))
-
+        self.net = caffe.Classifier(architecture, weights, caffe.TEST, channel_swap=(2,1,0))
         parsible_net = caffe_pb2.NetParameter()
         text_format.Merge(open(architecture).read(), parsible_net)
 
@@ -38,7 +37,7 @@ class CaffeNet:
 
     def predict(self, img):
         self.predicted = True
-        self.net.predict([img])
+        self.net.predict([img],oversample=True)
         return np.copy(self.net.blobs['prob'].data)
 
     def set_new_size(self, new_size):
@@ -67,9 +66,10 @@ class CaffeNet:
         grad = np.copy(self.net.backward(start=layer)['data'][0]).transpose(1, 2, 0)
 
         # gradient swap
-        temp = np.copy(grad[:,:,0])
-        grad[:,:,0] = grad[:,:,2]
-        grad[:,:,2] = temp
+        if grad.shape[2] == 3:
+            temp = np.copy(grad[:,:,0])
+            grad[:,:,0] = grad[:,:,2]
+            grad[:,:,2] = temp
 
         return grad
 

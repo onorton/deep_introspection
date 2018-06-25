@@ -2,6 +2,7 @@ import numpy as np
 from deep_introspection import im2col, lrp
 import matplotlib.pyplot as plt
 from scipy.misc import imread, imresize
+from skimage import util
 
 alpha = 6
 beta = 2
@@ -11,15 +12,15 @@ B_plus = 2*B
 
 V = B/6.5
 C = 1
-l = 1/(224*224*B**alpha)
-l_tv = 1/(224*224*V**beta)
+l = 0
+l_tv = 0
 
-def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
+def synthesise_boundary(net, img, layer, xmax, ymax, xmin=0,ymin=0):
     x = B_plus*np.random.uniform(size=net.input_shape())-B
-
+    plt.imshow((img+128)/255)
+    plt.show()
     height = ymax-ymin+1
     width = xmax-xmin+1
-
 
     if height % 2 == 1:
         height += 1
@@ -27,18 +28,34 @@ def synthesise_boundary(net, img, xmax, ymax, xmin=0,ymin=0):
     if width % 2 == 1:
         width += 1
         xmax += 1
+
     x[net.input_shape()[0]//2-height//2:net.input_shape()[0]//2+height//2,net.input_shape()[1]//2-width//2:net.input_shape()[1]//2+width//2,:] = img[ymin:ymax+1,xmin:xmax+1,:]
 
+    mod_img = np.copy(img)
 
-    net.set_new_size(net.input_shape())
-    net.predict(x)
+    mean = np.array([103.939, 116.779, 123.68])
+    mod_img[:,:,2] += mean[0]
+    mod_img[:,:,1] += mean[1]
+    mod_img[:,:,0] += mean[2]
 
-    layer = net.get_layer_names()[-1]
+    print(ymin,ymax,xmin,xmax)
+    x = imresize(mod_img[ymin:ymax+1,xmin:xmax+1,:],net.input_shape()[:2]).astype('float64')
+    plt.imshow(x/255)
+    plt.show()
+
+    net.set_new_size(net.input_shape()[:2])
+    print(np.mean(net.predict(x), axis=0).argsort()[-5:][::-1])
+    # mean = np.array([103.939, 116.779, 123.68])
+    # x[:, :, 0] += mean[2]
+    # x[:, :, 1] += mean[1]
+    # x[:, :, 2] += mean[0]
+
     target = net.get_activations(layer)
-    return synthesise(net, target, x)
+    print(target.shape)
+    return synthesise(net, target, layer)
 
 
-def synthesise(net, target, img):
+def synthesise(net, target, layer):
     """
     Find an image whose representation in the network is as close as possible
     to the representation given.
@@ -51,14 +68,12 @@ def synthesise(net, target, img):
     An image as a numpy array, total loss
     """
 
+
     x = 2*np.random.uniform(size=net.input_shape())-1
+
     for i in range(x.shape[2]):
          t = np.percentile(x[:,:,i], 95)
-         x[:,:,i] = x[:,:,i]/t * B/(3**0.5)
-
-    #x = np.load('start.npy')
-
-    layer = net.get_layer_names()[-1]
+         x[:,:,i] = x[:,:,i]/t * B/(x.shape[2]**0.5)
 
     net.set_new_size(x.shape[:2])
 
@@ -67,6 +82,7 @@ def synthesise(net, target, img):
     mu = 0
 
     net.predict(x)
+
     rep = net.get_activations(layer)
     rep_loss = loss(rep, target)
     prev_loss = C*rep_loss + regularised(x)
@@ -75,7 +91,7 @@ def synthesise(net, target, img):
     print("Initial loss: " + str(rep_loss))
 
 
-    iterations = 300
+    iterations = 50
     for i in range(iterations):
 
         #clip pixel intensities
@@ -101,11 +117,11 @@ def synthesise(net, target, img):
         print("Total loss:" + str(total_loss) + ", TV loss: " + str(tv(x)))
         print("Loss: " + str(rep_loss) + " Change: " + str(rep_loss-prev_loss))
 
-    return x, total_loss
+    return x, rep_loss
 
 def regularised(x):
     norm = np.sum((np.sum(x**2, 2)**(alpha/2)))
-    print(l*norm, l_tv*tv(x))
+    print(l*norm, l_tv*tv(x), "Mean intensity: " + str(np.mean(np.sum(x**2, axis=2)**0.5)))
     return l*norm + l_tv*tv(x)
 
 def norm_grad(x):

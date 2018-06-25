@@ -1,4 +1,5 @@
 name: "VGG16"
+force_backward: true
 layer {
   name: "data"
   type: "Data"
@@ -11,9 +12,7 @@ layer {
   transform_param {
     mirror: true
     crop_size: 224
-    mean_value: 103.939
-    mean_value: 116.779
-    mean_value: 123.68
+    mean_value: 133.0
   }
   data_param {
     source: "qe_train_lmdb"
@@ -57,9 +56,9 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 32
+    num_output: 512
     pad: 1
-    kernel_size: 5
+    kernel_size: 8
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -83,56 +82,12 @@ layer {
   type: "Pooling"
   pooling_param {
     pool: MAX
-    kernel_size: 2
-    stride: 2
+    kernel_size: 4
+    stride: 4
   }
-}
+}    
 layer {
   bottom: "pool1"
-  top: "conv2"
-  name: "conv2"
-  type: "Convolution"
-  param {
-    lr_mult: 1
-    decay_mult: 1
-  }
-  param {
-    lr_mult: 2
-    decay_mult: 0
-  }
-  convolution_param {
-    num_output: 64
-    pad: 1
-    kernel_size: 7
-    weight_filler {
-      type: "gaussian"
-      std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
-}
-layer {
-  bottom: "conv2"
-  top: "conv2"
-  name: "relu2"
-  type: "ReLU"
-}
-layer {
-  bottom: "conv2"
-  top: "pool2"
-  name: "pool2"
-  type: "Pooling"
-  pooling_param {
-    pool: MAX
-    kernel_size: 2
-    stride: 2
-  }
-}
-layer {
-  bottom: "pool2"
   top: "fc1"
   name: "fc1"
   type: "InnerProduct"
@@ -145,7 +100,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 1024
+    num_output: 2048
     weight_filler {
       type: "gaussian"
       std: 0.005

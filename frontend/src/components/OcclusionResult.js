@@ -20,7 +20,7 @@ export default class OcclusionResult extends Component {
     <h4>Occlusion Analysis</h4>
     The original class predicted for this image was {this.props.results.originalClass}.
     <br/>
-    <h5>Largest Change in Prediction</h5>
+    <h5>Largest Change in Confidence</h5>
     <p>After 10 samples, the features that are occluded to produce the largest change in probability for {this.props.results.originalClass} are {this.props.results.lc.features +'.'}</p>
     <img src={this.occlusionsToUrl(this.props.results.lc.features)} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.lc.predictions}/>
@@ -38,14 +38,17 @@ export default class OcclusionResult extends Component {
     <Predictions style={predictionsStyle} predictions={this.props.results.mfRequired.predictions}/>
     <br/>
 
-    <h5>Minimal Features Perturbation</h5>
-    {ths.props.results.mfPerturbation.features == [] ? None of the features can be occluded to change the top class prediction. :
-    <p>The minimal features that need to be occluded so {this.props.results.originalClass} is not predicted are {this.props.results.mfPerturbation.features + '.'}</p>
+    <h5>Minimal Features for a Change in Classifation</h5>
+    {this.props.results.mfPerturbation.features == [] ? <p>None of the features can be occluded to change the top classification.</p> :
+    <div>
+    <p>The minimal features that need to be occluded so {this.props.results.originalClass} is not the top class are {this.props.results.mfPerturbation.features + '.'}</p>
     <img src={this.occlusionsToUrl(this.props.results.mfPerturbation.features)} style={{width:'50%', borderStyle:"solid", borderColor:"#10161A",position:'relative', top: 0, left: 0}}/>
     <Predictions style={predictionsStyle} predictions={this.props.results.mfPerturbation.predictions}/>
     <br/>
+    </div>
     }
     </div>
     )
+
   }
 }

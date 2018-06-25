@@ -121,7 +121,6 @@ export default class ImageCollection extends Component {
     let imageStyle = {maxHeight: '300px', maxWidth: '90%'}
     let selectedStyle = { outlineColor: '#137CBD', outlineStyle: 'solid', maxHeight: '300px', maxWidth: '90%'}
 
-
     return (
       <div style={this.props.style}>
         <div style={{backgroundColor: '#BFCCD6'}}>

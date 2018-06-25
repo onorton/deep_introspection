@@ -117,38 +117,22 @@ def data(points, inc, resFac):
         return np.array(output)
 
 
-def fixations(net, img, offset, resFac):
+def fixations(net, img, offset, resFac=1):
     p = net.predict(img)
-    p_m = np.argmax(np.mean(p, axis=0))
-    labels = [np.argmax(p[i]) for i in range(5)]
+    p_m = np.argmax(p)
     points = []
     for i in range(5):
-        if np.argmax(p[i, :]) == p_m:
+        if i==0:
             points.append([int(p_m)])
         else:
-            points.append([0])
+            points.append(0)
 
-    points = discriminative_locations_fully_connected(points, net.net.params['fc8'][0].data, net.net.blobs['fc7'].data)
-    points = discriminative_locations_fully_connected(points, net.net.params['fc7'][0].data, net.net.blobs['fc6'].data)
-    points = discriminative_locations_fully_connected(points, net.net.params['fc6'][0].data, net.net.blobs['pool5'].data)
-    points = discriminative_locations_pool(points, net.net.blobs['conv5_3'].data, 2, 2)
-    points = discriminative_locations_convolution(points, net.net.params['conv5_3'][0].data, net.net.blobs['conv5_2'].data, 3, 1, 1)
-    points = discriminative_locations_convolution(points, net.net.params['conv5_2'][0].data, net.net.blobs['conv5_1'].data, 3, 1, 1)
-    points = discriminative_locations_convolution(points, net.net.params['conv5_1'][0].data, net.net.blobs['pool4'].data, 3, 1, 1)
-    points = discriminative_locations_pool(points, net.net.blobs['conv4_3'].data, 2, 2)
-    points = discriminative_locations_convolution(points, net.net.params['conv4_3'][0].data, net.net.blobs['conv4_2'].data, 3, 1, 1)
-    points = discriminative_locations_convolution(points, net.net.params['conv4_2'][0].data, net.net.blobs['conv4_1'].data, 3, 1, 1)
-    points = discriminative_locations_convolution(points, net.net.params['conv4_1'][0].data, net.net.blobs['pool3'].data, 3, 1, 1)
-    points = discriminative_locations_pool(points, net.net.blobs['conv3_3'].data, 2, 2)
-    points = discriminative_locations_convolution(points, net.net.params['conv3_3'][0].data, net.net.blobs['conv3_2'].data, 3, 1, 1)
-    points = discriminative_locations_convolution(points, net.net.params['conv3_2'][0].data, net.net.blobs['conv3_1'].data, 3, 1, 1)
-    points = discriminative_locations_convolution(points, net.net.params['conv3_1'][0].data, net.net.blobs['pool2'].data, 3, 1, 1)
-    points = discriminative_locations_pool(points, net.net.blobs['conv2_2'].data, 2, 2)
-    points = discriminative_locations_convolution(points, net.net.params['conv2_2'][0].data, net.net.blobs['conv2_1'].data, 3, 1, 1)
-    points = discriminative_locations_convolution(points, net.net.params['conv2_1'][0].data, net.net.blobs['pool1'].data, 3, 1, 1)
-    points = discriminative_locations_pool(points, net.net.blobs['conv1_2'].data, 2, 2)
-    points = discriminative_locations_convolution(points, net.net.params['conv1_2'][0].data, net.net.blobs['conv1_1'].data, 3, 1, 1)
+    points = discriminative_locations_fully_connected(points, net.net.params['fc2'][0].data, net.net.blobs['fc1'].data)
+    points = discriminative_locations_fully_connected(points, net.net.params['fc1'][0].data, net.net.blobs['pool2'].data)
+    points = discriminative_locations_pool(points, net.net.blobs['conv2'].data, 4, 4)
+    points = discriminative_locations_convolution(points, net.net.params['conv2'][0].data, net.net.blobs['pool1'].data, 7, 1, 3)
+    points = discriminative_locations_pool(points, net.net.blobs['conv1'].data, 4, 4)
+    points = discriminative_locations_convolution(points, net.net.params['conv1'][0].data, net.net.blobs['data'].data, 7, 1, 3)
     points = data(points, offset, resFac)
-
-    points = list(map(lambda x: x*resFac, points))
+    points = np.array(list(map(lambda x: x*resFac, points)))
     return points

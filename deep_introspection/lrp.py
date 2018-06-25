@@ -3,6 +3,7 @@ import copy
 import caffe
 import time
 from deep_introspection import im2col
+import matplotlib.pyplot as plt
 
 
 
@@ -57,15 +58,15 @@ def propagate_fully_to_conv(relevances, weights, activations, alpha):
 def propagate_conv(net, relevances, activations, weightsLayer, alpha):
     beta = alpha - 1
 
-    positiveWeights = np.maximum(net.get_weights(weightsLayer), 1e-9)
-    negativeWeights = np.minimum(net.get_weights(weightsLayer), -1e-9)
+    positiveWeights = np.maximum(net.get_weights(weightsLayer), 0)
+    negativeWeights = np.minimum(net.get_weights(weightsLayer), 0)
 
     z = forward(activations, positiveWeights, net.get_activations(weightsLayer).shape)
-    s = relevances/z
+    s = relevances/(z+1e-9)
     positive = backprop(s, positiveWeights, activations)
 
     z = forward(activations, negativeWeights, net.get_activations(weightsLayer).shape)
-    s = relevances/z
+    s = relevances/(z-1e-9)
     negative = backprop(s, negativeWeights, activations)
 
     return activations*(alpha*positive - beta*negative)
@@ -85,7 +86,7 @@ def propagate_first_conv(net, relevances, activations, weightsLayer, h, l):
 def forward(x, w, shape):
     if len(x.shape) == 3:
         x = x.reshape((1,)+x.shape)
-    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3])
+    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3], padding=1)
     w_col = w.reshape(w.shape[0],w.shape[1]*w.shape[2]*w.shape[3])
 
     out = np.matmul(w_col,x_col)
@@ -103,13 +104,13 @@ def backprop(s, w, x):
 
     x = x.reshape(tuple([1]+list(x.shape)))
 
-    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3])
+    x_col = im2col.im2col_indices(x, w.shape[2], w.shape[3],padding=1)
 
     dW = np.matmul(s_reshaped, np.transpose(x_col))
     dW = dW.reshape(w.shape)
     W_reshape = w.reshape((w.shape[0],w.shape[1]*w.shape[2]*w.shape[3]))
     dX_col = np.matmul(np.transpose(W_reshape), s_reshaped)
-    dX = im2col.col2im_indices(dX_col, x.shape, w.shape[2], w.shape[3])
+    dX = im2col.col2im_indices(dX_col, x.shape, w.shape[2], w.shape[3], padding=1)
     return dX[0]
 
 def propagate_pooling(net, relevances, activations, poolLayer, k):
@@ -195,11 +196,12 @@ def calculate_lrp_heatmap(net, img):
                 relevances = propagate_fully_to_conv(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha)
             else:
                 relevances = propagate_fully_connected(relevances, np.transpose(net.get_weights(name)), net.get_activations(next_layer), alpha) # relevances of fc6
+
         elif layer_type == 'Convolution' and net.get_layer_type(next_layer) == 'Input':
             relevances = propagate_first_conv(net, relevances, net.get_activations(next_layer), name, h, l)
+
         elif layer_type == 'Convolution':
             relevances =  propagate_conv(net, relevances, net.get_activations(next_layer), name, alpha)
 
     relevances =  np.mean(relevances.transpose(1,2,0), 2)
-
     return relevances

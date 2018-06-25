@@ -4,7 +4,7 @@ from skimage import util
 import os
 
 train = 8192
-test = 1024
+test = 2048
 
 size = 112
 
